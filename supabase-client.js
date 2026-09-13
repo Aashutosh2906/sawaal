@@ -18,7 +18,7 @@ const Sync = (function () {
     const { data, error } = await sb.rpc("login_or_resume", {
       p_name: name, p_school: school, p_class: klass, p_pin: pin
     });
-    if (error) return { ok: false, error: error.message.includes("wrong_pin") ? "Wrong PIN for that name/school/class." : error.message };
+    if (error) { console.warn("login_or_resume failed:", error); return { ok: false, error: error.message.includes("wrong_pin") ? "Wrong PIN for that name/school/class." : error.message }; }
     const row = data[0];
     studentId = row.student_id; sessionId = row.session_id; code = row.code;
     localStorage.setItem("sb_session", JSON.stringify({ studentId, sessionId, code }));
@@ -64,7 +64,8 @@ const Sync = (function () {
   async function updateProgress(screenIndex) {
     if (!enabled()) return;
     const { error } = await sb.from("sessions").update({ current_screen: screenIndex }).eq("id", sessionId);
-    if (!error) window.dispatchEvent(new CustomEvent("sb-saved"));
+    if (error) console.warn("Progress save failed:", error.message);
+    else window.dispatchEvent(new CustomEvent("sb-saved"));
   }
 
   async function markComplete() {
