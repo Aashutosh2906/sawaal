@@ -1,8 +1,8 @@
 // Sawaal Better — Supabase sync layer.
 // Fill these in from your Supabase project (Project Settings > API).
 // The anon key is safe to expose in client-side code — that's what it's for.
-const SUPABASE_URL = "https://YOUR-PROJECT.supabase.co";
-const SUPABASE_ANON_KEY = "YOUR-ANON-KEY";
+const SUPABASE_URL = "https://rejnfcvzrvzadecodttq.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJlam5mY3Z6cnZ6YWRlY29kdHRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMDYwMzQsImV4cCI6MjEwNDg4MjAzNH0.gD7USYWZqkHXOREfK2pccB3bRS6ZroA64XBtE4kRzXk";
 
 const sb = (window.supabase) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
