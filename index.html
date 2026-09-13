@@ -206,6 +206,9 @@ label.fl span{font-weight:400;color:var(--muted)}
 
 /* M&E block */
 .me{border:2px dashed var(--slate-2);border-radius:4px;background:#FBFAF6;padding:16px;margin:22px 0 6px}
+.meq.needs-answer,.qcard.needs-answer{outline:2px solid var(--chilli);outline-offset:5px;border-radius:4px;animation:shake .3s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+#next.warn{background:var(--chilli);color:#fff}
 .me>h3{margin:0 0 3px;font-size:18px}
 .me .sub{font-size:13.5px;color:var(--muted);margin-bottom:14px}
 .likert{display:flex;gap:6px;margin-top:7px}
@@ -1518,19 +1521,48 @@ function show(i){
   if(window.Sync)Sync.updateProgress(cur);
   if(cur===slides.length-1&&window.Sync)Sync.markComplete();
 }
-nextBtn.addEventListener("click",function(){show(cur+1);});
+function findIncomplete(slide){
+  var missing=[];
+  Array.prototype.forEach.call(slide.querySelectorAll(".meq"),function(box){
+    if(box.querySelector("button[data-val]")){ // likert or choice — text-only meqs are optional
+      var ans=STATE.answers[box.dataset.item];
+      if(!ans||ans.a===undefined||ans.a===null||ans.a==="")missing.push(box);
+    }
+  });
+  Array.prototype.forEach.call(slide.querySelectorAll(".act .qcard[data-q]"),function(card){
+    if(!card.dataset.done)missing.push(card);
+  });
+  return missing;
+}
+function goNext(){
+  var missing=findIncomplete(slides[cur]);
+  if(missing.length){
+    missing.forEach(function(el){
+      el.classList.add("needs-answer");
+      setTimeout(function(){el.classList.remove("needs-answer");},1600);
+    });
+    missing[0].scrollIntoView({behavior:"smooth",block:"center"});
+    var old=nextBtn.textContent;
+    nextBtn.textContent="Answer above first";
+    nextBtn.classList.add("warn");
+    setTimeout(function(){nextBtn.textContent=old;nextBtn.classList.remove("warn");},1600);
+    return;
+  }
+  show(cur+1);
+}
+nextBtn.addEventListener("click",goNext);
 prevBtn.addEventListener("click",function(){show(cur-1);});
 document.addEventListener("keydown",function(e){
   var t=e.target.tagName;
   if(t==="TEXTAREA"||t==="INPUT"||t==="SELECT")return;
-  if(e.key==="ArrowRight")show(cur+1);
+  if(e.key==="ArrowRight")goNext();
   if(e.key==="ArrowLeft")show(cur-1);
 });
 var tx=0,ty=0;
 deck.addEventListener("touchstart",function(e){tx=e.changedTouches[0].clientX;ty=e.changedTouches[0].clientY;},{passive:true});
 deck.addEventListener("touchend",function(e){
   var dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;
-  if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.8){show(cur+(dx<0?1:-1));}
+  if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.8){dx<0?goNext():show(cur-1);}
 },{passive:true});
 
 /* TOC */
@@ -1855,11 +1887,16 @@ function restoreStoredFields(){
     var klass=document.getElementById("acctClass").value.trim();
     var pin=document.getElementById("acctPin").value.trim();
     if(!name||!school||!klass||pin.length!==4){status.textContent="Fill in all four fields — PIN must be 4 digits.";return;}
+    var localBefore=Sync.restoreLocal&&Sync.restoreLocal();
     status.textContent="Saving...";
     var res=await Sync.loginOrResume(name,school,klass,pin);
     if(!res.ok){status.textContent=res.error+" Try again — nothing is saved until this succeeds.";return;}
     STATE.pid=res.code;
     var pidField=document.getElementById("pid");if(pidField)pidField.value=res.code;
+    if(!res.resumed&&localBefore&&localBefore.studentId&&localBefore.studentId!==Sync.getStudentId()){
+      status.textContent="Heads up: this created a NEW account, not the one saved on this device (code "+localBefore.code+"). Check that your name, school and class are typed exactly the same as last time — even a spelling difference creates a separate record.";
+      return;
+    }
     if(res.resumed){
       status.textContent="Welcome back — restoring your progress...";
       var prev=await Sync.loadAnswers();
@@ -1869,6 +1906,7 @@ function restoreStoredFields(){
       });
       restoreMeqUI();restoreStoredFields();restoreActivitiesUI();updateExportSummary();
       status.textContent="Welcome back — restored "+prev.length+" previous answers.";
+      console.log("[resume debug] current_screen from server:",res.current_screen,"slides.length:",slides.length);
       if(res.current_screen>0)show(res.current_screen);
     }else{
       status.textContent="Saved. You can close this tab and come back any time with the same name/school/class + PIN.";
