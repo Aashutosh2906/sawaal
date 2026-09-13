@@ -56,6 +56,8 @@ body{
 
 /* ---------- nav bar ---------- */
 #bar{display:flex;align-items:center;gap:10px;background:var(--slate);color:#fff;padding:8px max(10px,env(safe-area-inset-left)) calc(8px + env(safe-area-inset-bottom)) 10px;z-index:50}
+#savedTag{font-size:11px;color:var(--peacock);background:var(--mint);border-radius:8px;padding:3px 8px;opacity:0;transition:opacity .4s ease}
+#savedTag.show{opacity:1}
 #bar button{font-family:var(--body);font-size:15px;font-weight:600;border:0;border-radius:10px;padding:11px 16px;cursor:pointer}
 #prev{background:#33415A;color:#fff}
 #next{background:var(--marigold);color:#231B08;flex:1;max-width:260px;margin-left:auto}
@@ -142,7 +144,7 @@ a{color:var(--ultramarine)}
 .opts.row .opt{flex:1;min-width:104px;text-align:center;font-weight:600}
 .opt:hover{border-color:var(--ink)}
 .opt:focus-visible{outline:3px solid var(--ultramarine);outline-offset:2px}
-.opt.picked{border-width:2px}
+.opt.picked{border-width:2px;background:var(--slate);border-color:var(--slate);color:#fff}
 .opt.right{background:var(--mint);border-color:var(--peacock)}
 .opt.wrong{background:var(--blush);border-color:var(--chilli)}
 .opt[disabled]{cursor:default}
@@ -252,6 +254,7 @@ th{background:#F3EFE6;font-weight:700}
     <button id="menuBtn" aria-label="Open contents">☰</button>
     <button id="prev">Back</button>
     <span id="pos">1/1</span>
+    <span id="savedTag">Saved</span>
     <span id="modLabel"></span>
     <button id="next">Start</button>
   </nav>
@@ -316,6 +319,7 @@ th{background:#F3EFE6;font-weight:700}
       <label class="fl" for="acctPin">Choose a 4-digit PIN (remember it — you'll need it to resume)</label>
       <input type="text" id="acctPin" maxlength="4" inputmode="numeric" autocomplete="off">
       <button type="button" id="acctSaveBtn" style="margin-top:14px">Save my progress</button>
+      <button type="button" id="acctSkipBtn" style="margin-top:14px;background:transparent;border:1px solid var(--rule);color:var(--muted)">Skip, stay anonymous</button>
       <p id="acctStatus" class="small" style="margin-top:10px"></p>
     </div>
   </div>
@@ -1800,8 +1804,10 @@ slides[0].classList.add("on");
 /* ============ account / resume ============ */
 (function(){
   var saveBtn=document.getElementById("acctSaveBtn");
+  var skipBtn=document.getElementById("acctSkipBtn");
   var status=document.getElementById("acctStatus");
   if(!saveBtn)return;
+  if(skipBtn)skipBtn.addEventListener("click",function(){show(cur+1);});
   saveBtn.addEventListener("click",async function(){
     var name=document.getElementById("acctName").value.trim();
     var school=document.getElementById("acctSchool").value.trim();
@@ -1822,6 +1828,14 @@ slides[0].classList.add("on");
     status.textContent="Found saved progress on this device. Enter the same details + PIN above to resume, or just continue below to start fresh.";
   }
 })();
+
+window.addEventListener("sb-saved",function(){
+  var tag=document.getElementById("savedTag");
+  if(!tag)return;
+  tag.classList.add("show");
+  clearTimeout(tag._t);
+  tag._t=setTimeout(function(){tag.classList.remove("show");},1500);
+});
 
 show(0);
 updateExportSummary();
