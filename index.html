@@ -1801,6 +1801,34 @@ document.getElementById("showRaw").addEventListener("click",showRaw);
 
 /* ============ GO ============ */
 slides[0].classList.add("on");
+/* ============ RESUME: restore previous answers into STATE + UI ============ */
+function restoreMeqUI(){
+  Array.prototype.forEach.call(document.querySelectorAll(".meq"),function(box){
+    var id=box.dataset.item,ans=STATE.answers[id];
+    if(!ans)return;
+    var buttons=box.querySelectorAll("button[data-val]");
+    if(buttons.length){
+      Array.prototype.forEach.call(buttons,function(b){
+        if(String(b.dataset.val)===String(ans.a))b.classList.add(b.parentNode.classList.contains("likert")?"on":"picked");
+      });
+    }else{
+      var ta=box.querySelector("textarea");
+      if(ta)ta.value=ans.a;
+    }
+  });
+  Array.prototype.forEach.call(document.querySelectorAll(".me"),function(host){
+    var saved=host.querySelector(".saved");
+    if(saved&&host.querySelector(".meq .on,.meq .picked"))saved.classList.add("on");
+  });
+}
+function restoreStoredFields(){
+  Array.prototype.forEach.call(document.querySelectorAll("[data-store]"),function(el){
+    var ans=STATE.answers[el.dataset.store];
+    if(ans&&!el.value)el.value=ans.a;
+  });
+  if(typeof rotiUpdate==="function")rotiUpdate();
+}
+
 /* ============ account / resume ============ */
 (function(){
   var saveBtn=document.getElementById("acctSaveBtn");
@@ -1816,11 +1844,22 @@ slides[0].classList.add("on");
     if(!name||!school||!klass||pin.length!==4){status.textContent="Fill in all four fields — PIN must be 4 digits.";return;}
     status.textContent="Saving...";
     var res=await Sync.loginOrResume(name,school,klass,pin);
-    if(!res.ok){status.textContent=res.error;return;}
+    if(!res.ok){status.textContent=res.error+" Try again — nothing is saved until this succeeds.";return;}
     STATE.pid=res.code;
     var pidField=document.getElementById("pid");if(pidField)pidField.value=res.code;
-    status.textContent=res.resumed?"Welcome back — resuming your progress.":"Saved. You can close this tab and come back any time with the same name/school/class + PIN.";
-    if(res.resumed&&res.current_screen>0)show(res.current_screen);
+    if(res.resumed){
+      status.textContent="Welcome back — restoring your progress...";
+      var prev=await Sync.loadAnswers();
+      prev.forEach(function(row){
+        var val;try{val=JSON.parse(row.answer);}catch(e){val=row.answer;}
+        STATE.answers[row.item_id]={mod:row.module||"",q:row.question||"",a:val,correct:row.correct||"",t:row.answered_at};
+      });
+      restoreMeqUI();restoreStoredFields();updateExportSummary();
+      status.textContent="Welcome back — restored "+prev.length+" previous answers.";
+      if(res.current_screen>0)show(res.current_screen);
+    }else{
+      status.textContent="Saved. You can close this tab and come back any time with the same name/school/class + PIN.";
+    }
   });
   // If this device already has a session (didn't clear storage), offer to jump back in.
   var local=Sync.restoreLocal&&Sync.restoreLocal();
