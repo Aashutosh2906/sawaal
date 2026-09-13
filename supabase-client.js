@@ -74,7 +74,14 @@ const Sync = (function () {
     await sb.from("sessions").update({ completed_at: new Date().toISOString() }).eq("id", sessionId);
   }
 
+  async function loadAnswers() {
+    if (!enabled()) return [];
+    const { data, error } = await sb.from("answers").select("*").eq("session_id", sessionId);
+    if (error) { console.warn("Could not load previous answers:", error.message); return []; }
+    return data || [];
+  }
+
   window.addEventListener("beforeunload", flush);
 
-  return { loginOrResume, restoreLocal, queueAnswer, updateProgress, markComplete, enabled, getCode: () => code };
+  return { loginOrResume, restoreLocal, queueAnswer, updateProgress, markComplete, enabled, loadAnswers, getCode: () => code };
 })();
