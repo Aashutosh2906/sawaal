@@ -1553,12 +1553,12 @@ var pid=document.getElementById("pid");
 pid.addEventListener("input",function(){STATE.pid=pid.value.trim();updateExportSummary();});
 
 /* ============ CHOICE ACTIVITIES ============ */
-document.addEventListener("click",function(e){
-  var opt=e.target.closest(".act .opts .opt");if(!opt)return;
-  var card=opt.closest(".qcard");if(!card)return;
-  var act=opt.closest(".act").dataset.act;
+function applyActivityAnswer(card,val,isRestore){
+  var act=card.closest(".act").dataset.act;
   var opts=card.querySelectorAll(".opt");
-  if(card.dataset.done)return;
+  var opt=null;
+  Array.prototype.forEach.call(opts,function(o){if(o.dataset.v===val)opt=o;});
+  if(!opt||card.dataset.done)return;
   card.dataset.done="1";
   var correct=opt.hasAttribute("data-correct");
   Array.prototype.forEach.call(opts,function(o){
@@ -1572,19 +1572,32 @@ document.addEventListener("click",function(e){
   fb.innerHTML="<b>"+(correct?"Yes.":"Have another look.")+"</b>"+(opt.dataset.fb||"");
   if(!SCORES[act])SCORES[act]={right:0,total:0};
   SCORES[act].right+=correct?1:0;SCORES[act].total+=1;
-  rec(act+"_"+card.dataset.q,modOf(opt),card.querySelector(".qt").textContent.slice(0,140),opt.dataset.v,correct?1:0);
-  var all=opt.closest(".actbody").querySelectorAll(".qcard").length;
-  var done=opt.closest(".actbody").querySelectorAll(".qcard[data-done]").length;
+  if(!isRestore)rec(act+"_"+card.dataset.q,modOf(opt),card.querySelector(".qt").textContent.slice(0,140),opt.dataset.v,correct?1:0);
+  var all=card.closest(".actbody").querySelectorAll(".qcard").length;
+  var done=card.closest(".actbody").querySelectorAll(".qcard[data-done]").length;
   if(done===all){
-    var st=opt.closest(".actbody").querySelector(".stamp[data-stamp]");
+    var st=card.closest(".actbody").querySelector(".stamp[data-stamp]");
     if(st){
       var s=SCORES[act];
       st.textContent=s.right+" of "+s.total+" — "+(s.right===s.total?"clean sweep":(s.right>=s.total*0.6?"solid":"worth a second read"));
       st.classList.add("on");
       if(s.right<s.total*0.6)st.style.borderColor=st.style.color="#E23A2E";
-      rec(act+"_score","Activity score","Score on "+act,s.right+"/"+s.total,s.right);
+      if(!isRestore)rec(act+"_score","Activity score","Score on "+act,s.right+"/"+s.total,s.right);
     }
   }
+}
+function restoreActivitiesUI(){
+  Array.prototype.forEach.call(document.querySelectorAll(".act[data-act] .qcard[data-q]"),function(card){
+    var act=card.closest(".act").dataset.act;
+    var ans=STATE.answers[act+"_"+card.dataset.q];
+    if(ans)applyActivityAnswer(card,ans.a,true);
+  });
+}
+document.addEventListener("click",function(e){
+  var opt=e.target.closest(".act .opts .opt");if(!opt)return;
+  var card=opt.closest(".qcard");if(!card)return;
+  if(card.dataset.done)return;
+  applyActivityAnswer(card,opt.dataset.v,false);
 });
 
 /* ============ ROTI BUILDER ============ */
@@ -1854,7 +1867,7 @@ function restoreStoredFields(){
         var val;try{val=JSON.parse(row.answer);}catch(e){val=row.answer;}
         STATE.answers[row.item_id]={mod:row.module||"",q:row.question||"",a:val,correct:row.correct||"",t:row.answered_at};
       });
-      restoreMeqUI();restoreStoredFields();updateExportSummary();
+      restoreMeqUI();restoreStoredFields();restoreActivitiesUI();updateExportSummary();
       status.textContent="Welcome back — restored "+prev.length+" previous answers.";
       if(res.current_screen>0)show(res.current_screen);
     }else{
