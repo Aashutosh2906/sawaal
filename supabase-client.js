@@ -85,3 +85,4 @@ const Sync = (function () {
 
   return { loginOrResume, restoreLocal, queueAnswer, updateProgress, markComplete, enabled, loadAnswers, getCode: () => code };
 })();
+window.Sync = Sync;
