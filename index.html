@@ -1,0 +1,1848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sawaal Better — Thinking With AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Inter:wght@400;500;600;700&family=Noto+Nastaliq+Urdu:wght@700&family=Noto+Sans+Devanagari:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#171412;
+  --slate:#1B2430;
+  --slate-2:#2A3849;
+  --page:#FFFDF7;
+  --rule:#E4DED2;
+  --muted:#6B6357;
+  --marigold:#FFB703;
+  --marigold-deep:#E08A00;
+  --chilli:#E23A2E;
+  --peacock:#0F7B6C;
+  --ultramarine:#2743C4;
+  --lilac:#F2EEFF;
+  --mint:#E8F5F1;
+  --blush:#FDECEA;
+  --amberbg:#FFF4DC;
+  --shadow:0 1px 0 var(--rule);
+  --disp:"Bricolage Grotesque","Trebuchet MS",sans-serif;
+  --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --pad:clamp(18px,4.5vw,56px);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;height:100%}
+body{
+  background:var(--slate);
+  color:var(--ink);
+  font-family:var(--body);
+  font-size:17px;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  overscroll-behavior:none;
+}
+@media (max-width:600px){body{font-size:16px}}
+
+/* ---------- shell ---------- */
+#rail{position:fixed;top:0;left:0;height:4px;width:0;background:var(--marigold);z-index:60;transition:width .35s cubic-bezier(.4,0,.2,1)}
+#stage{height:100dvh;display:flex;flex-direction:column}
+#deck{flex:1;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;-webkit-overflow-scrolling:touch}
+.slide{display:none;min-height:100%;padding:calc(var(--pad) + 6px) var(--pad) 40px;background:var(--page);
+  background-image:linear-gradient(var(--rule) 1px,transparent 1px);background-size:100% 34px;background-position:0 -1px}
+.slide.on{display:block;animation:in .28s ease-out}
+.slide.cover.on,.slide.divider.on{display:flex;align-items:center}
+@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.wrap{max-width:760px;margin:0 auto}
+.wide .wrap{max-width:960px}
+
+/* ---------- nav bar ---------- */
+#bar{display:flex;align-items:center;gap:10px;background:var(--slate);color:#fff;padding:8px max(10px,env(safe-area-inset-left)) calc(8px + env(safe-area-inset-bottom)) 10px;z-index:50}
+#savedTag{font-size:11px;color:var(--peacock);background:var(--mint);border-radius:8px;padding:3px 8px;opacity:0;transition:opacity .4s ease}
+#savedTag.show{opacity:1}
+#bar button{font-family:var(--body);font-size:15px;font-weight:600;border:0;border-radius:10px;padding:11px 16px;cursor:pointer}
+#prev{background:#33415A;color:#fff}
+#next{background:var(--marigold);color:#231B08;flex:1;max-width:260px;margin-left:auto}
+#next:disabled{opacity:.4;cursor:not-allowed}
+#menuBtn{background:#33415A;color:#fff;padding:11px 13px}
+#pos{font-size:13px;color:#9FB0C6;font-variant-numeric:tabular-nums;min-width:54px;text-align:center}
+#modLabel{font-size:13px;color:#9FB0C6;max-width:30%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:520px){#modLabel{display:none}}
+
+/* ---------- contents overlay ---------- */
+#toc{position:fixed;inset:0;background:rgba(12,17,24,.96);color:#fff;z-index:70;display:none;overflow-y:auto;padding:24px}
+#toc.on{display:block}
+#toc h2{font-family:var(--disp);font-size:26px;margin:0 0 4px}
+#toc p{color:#9FB0C6;margin:0 0 20px;font-size:14px}
+.tocItem{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid #33415A;color:#fff;padding:13px 2px;font-size:16px;font-family:var(--body);cursor:pointer}
+.tocItem span{color:#8FA3BC;font-size:13px;display:block}
+.tocItem:hover{color:var(--marigold)}
+#tocClose{margin-top:22px;background:var(--marigold);color:#231B08;border:0;border-radius:10px;padding:12px 18px;font-weight:700;font-family:var(--body);font-size:15px;cursor:pointer}
+
+/* ---------- typography ---------- */
+h1{font-family:var(--disp);font-weight:800;font-size:clamp(32px,6.4vw,54px);line-height:1.02;letter-spacing:-.02em;margin:0 0 14px}
+h2{font-family:var(--disp);font-weight:800;font-size:clamp(25px,4.6vw,38px);line-height:1.08;letter-spacing:-.015em;margin:0 0 12px}
+h3{font-family:var(--disp);font-weight:700;font-size:20px;line-height:1.2;margin:24px 0 8px}
+p{margin:0 0 14px;max-width:66ch}
+.lead{font-size:clamp(17px,2.3vw,20px);color:#3C352C;max-width:60ch}
+.tag{display:inline-block;border-left:4px solid var(--marigold);padding:1px 0 1px 9px;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:14px}
+.mins{color:var(--muted);font-size:13px;font-weight:500}
+strong{font-weight:700}
+.small{font-size:14px;color:var(--muted)}
+ul,ol{margin:0 0 16px;padding-left:22px;max-width:64ch}
+li{margin-bottom:8px}
+a{color:var(--ultramarine)}
+
+/* ---------- dividers ---------- */
+.divider{background:var(--slate);background-image:none;color:#fff}
+.divider .wrap{width:100%}
+.divider h1{color:#fff}
+.divider .num{font-family:var(--disp);font-weight:800;font-size:clamp(60px,17vw,150px);line-height:.82;color:var(--marigold);letter-spacing:-.04em;margin-bottom:6px}
+.divider p{color:#B9C6D6;font-size:18px;max-width:52ch}
+.divider .kit{margin-top:26px;border-top:1px solid #3A4A5E;padding-top:16px;color:#8FA3BC;font-size:14px}
+
+/* ---------- cards & panels ---------- */
+.panel{background:#fff;border:1px solid var(--rule);border-radius:4px;padding:20px;margin:0 0 18px;box-shadow:0 2px 0 var(--rule)}
+.panel.tight{padding:15px}
+.grid{display:grid;gap:12px;margin-bottom:18px}
+@media (min-width:680px){.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}}
+.mini{background:#fff;border:1px solid var(--rule);border-radius:4px;padding:15px}
+.mini h4{margin:0 0 6px;font-family:var(--disp);font-size:17px;font-weight:700}
+.mini p{font-size:15px;margin:0;color:#4A4238}
+
+/* chat bubbles */
+.chat{background:#fff;border:1px solid var(--rule);border-radius:4px;padding:14px;margin-bottom:14px}
+.bub{border-radius:12px;padding:10px 13px;margin-bottom:8px;font-size:15px;line-height:1.45;max-width:92%}
+.you{background:var(--lilac);border:1px solid #DCD4FA}
+.ai{background:#F4F2EE;border:1px solid var(--rule);margin-left:auto}
+.bub b{display:block;font-size:11px;letter-spacing:.04em;color:var(--muted);margin-bottom:3px;font-weight:700}
+
+/* prompt boxes */
+.prompt{background:var(--slate);color:#EAF0F7;border-radius:6px;padding:14px 15px;font-size:15px;line-height:1.5;white-space:pre-wrap;position:relative;margin-bottom:12px}
+.prompt.weak{background:#F4EEEA;color:#5A483E;border:1px dashed #D9C6BA}
+.copy{position:absolute;top:8px;right:8px;background:#3B4A60;color:#fff;border:0;border-radius:6px;font-size:12px;font-weight:600;padding:6px 9px;cursor:pointer;font-family:var(--body)}
+.prompt.weak .copy{background:#C9B6A8;color:#3A2E26}
+.copy.done{background:var(--peacock);color:#fff}
+
+/* callouts */
+.note{border-left:4px solid var(--ultramarine);background:#F2F4FF;padding:13px 15px;border-radius:0 4px 4px 0;margin-bottom:18px;font-size:15px}
+.note.warn{border-color:var(--chilli);background:var(--blush)}
+.note.good{border-color:var(--peacock);background:var(--mint)}
+.note p:last-child{margin-bottom:0}
+.note h4{margin:0 0 5px;font-family:var(--disp);font-size:16px}
+
+/* ---------- activity ---------- */
+.act{border:2px solid var(--ink);border-radius:4px;background:#fff;padding:0;margin:0 0 20px;overflow:hidden}
+.act>header{background:var(--ink);color:#fff;padding:11px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.act>header h3{margin:0;color:#fff;font-size:17px;flex:1}
+.act>header .mins{color:var(--marigold);font-weight:600}
+.actbody{padding:18px 16px}
+.qcard{border-bottom:1px solid var(--rule);padding-bottom:16px;margin-bottom:16px}
+.qcard:last-child{border-bottom:0;margin-bottom:0;padding-bottom:0}
+.qcard .qt{font-weight:600;margin-bottom:10px;display:block}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opts.row{flex-direction:row;flex-wrap:wrap}
+.opt{text-align:left;font-family:var(--body);font-size:15px;background:#fff;border:1.5px solid var(--rule);border-radius:4px;padding:11px 13px;cursor:pointer;transition:border-color .15s,background .15s;color:var(--ink)}
+.opts.row .opt{flex:1;min-width:104px;text-align:center;font-weight:600}
+.opt:hover{border-color:var(--ink)}
+.opt:focus-visible{outline:3px solid var(--ultramarine);outline-offset:2px}
+.opt.picked{border-width:2px}
+.opt.right{background:var(--mint);border-color:var(--peacock)}
+.opt.wrong{background:var(--blush);border-color:var(--chilli)}
+.opt[disabled]{cursor:default}
+.opt.dim{opacity:.5}
+.fb{margin-top:10px;font-size:14.5px;line-height:1.5;padding:11px 13px;border-radius:4px;display:none}
+.fb.on{display:block}
+.fb.ok{background:var(--mint);border-left:4px solid var(--peacock)}
+.fb.no{background:var(--blush);border-left:4px solid var(--chilli)}
+.fb b{display:block;margin-bottom:3px}
+
+/* traffic pills */
+.opt.green{border-color:#9CCFC4}.opt.green.picked{background:var(--mint)}
+.opt.amber{border-color:#E8C97A}.opt.amber.picked{background:var(--amberbg)}
+.opt.red{border-color:#EFA9A3}.opt.red.picked{background:var(--blush)}
+
+/* ---------- ROTI builder ---------- */
+.roti{display:grid;gap:9px;margin-bottom:16px}
+.layer{display:grid;grid-template-columns:44px 1fr;align-items:stretch;border-radius:14px;overflow:hidden;border:1.5px solid var(--rule)}
+.layer .lk{display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-weight:800;font-size:21px;color:#231B08}
+.layer textarea{border:0;padding:11px 12px;font-family:var(--body);font-size:15px;resize:vertical;min-height:62px;background:#fff;color:var(--ink);line-height:1.45}
+.layer textarea:focus{outline:2px solid var(--ultramarine);outline-offset:-2px}
+.layer:nth-child(1) .lk{background:#FFD66B}
+.layer:nth-child(2) .lk{background:#FFB703}
+.layer:nth-child(3) .lk{background:#F08C2E}
+.layer:nth-child(4) .lk{background:#E06C3A}
+.meter{height:9px;background:var(--rule);border-radius:99px;overflow:hidden;margin:6px 0 6px}
+.meter i{display:block;height:100%;width:0;background:var(--chilli);transition:width .3s,background .3s}
+.mrow{display:flex;justify-content:space-between;align-items:center;font-size:13.5px;color:var(--muted);margin-bottom:12px}
+.mrow b{color:var(--ink)}
+
+/* hallucination hunt */
+.doc{background:#fff;border:1px solid var(--rule);border-radius:4px;padding:16px;line-height:1.95;font-size:15.5px;margin-bottom:14px;counter-reset:sus}
+.sus::before{counter-increment:sus;content:counter(sus);font-size:11px;font-weight:700;color:#7A7062;background:#F0EBE0;border-radius:4px;padding:2px 6px;margin-right:5px;vertical-align:1px}
+.sus.hit::before{background:var(--chilli);color:#fff}.sus.shown::before{background:var(--marigold-deep);color:#fff}.sus.miss::before{background:var(--peacock);color:#fff}
+.sus{border-bottom:2px dotted #B9AF9E;cursor:pointer;padding:1px 2px;border-radius:3px}
+.sus:hover{background:#FFF7E0}
+.sus.hit{background:#FFD9D5;border-bottom:2px solid var(--chilli)}
+.sus.miss{background:#E6EFEA;border-bottom:2px solid var(--peacock)}
+.sus.shown{background:#FFE9A8;border-bottom:2px solid var(--marigold-deep)}
+.huntfb{font-size:14.5px}
+.huntfb div{padding:9px 12px;border-radius:4px;margin-bottom:7px;background:#F7F4EE;border-left:4px solid var(--rule)}
+.huntfb div.bad{background:var(--blush);border-color:var(--chilli)}
+.huntfb div.fine{background:var(--mint);border-color:var(--peacock)}
+
+/* inputs */
+input[type=text],textarea,select{font-family:var(--body);font-size:15.5px;width:100%;border:1.5px solid var(--rule);border-radius:4px;padding:10px 12px;background:#fff;color:var(--ink)}
+input[type=text]:focus,textarea:focus,select:focus{outline:2px solid var(--ultramarine);outline-offset:-1px;border-color:var(--ultramarine)}
+textarea{resize:vertical;line-height:1.5}
+label.fl{display:block;font-weight:600;font-size:14.5px;margin:14px 0 5px}
+label.fl span{font-weight:400;color:var(--muted)}
+.btn{font-family:var(--body);font-size:15px;font-weight:600;border:0;border-radius:8px;padding:11px 17px;cursor:pointer;background:var(--ink);color:#fff}
+.btn.alt{background:var(--marigold);color:#231B08}
+.btn.ghost{background:#fff;color:var(--ink);border:1.5px solid var(--ink)}
+.btn:focus-visible{outline:3px solid var(--ultramarine);outline-offset:2px}
+.btnrow{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:12px}
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}
+.chip{background:#F3EFE6;border:1px solid var(--rule);border-radius:99px;padding:7px 12px;font-size:13.5px;cursor:pointer;font-family:var(--body);color:#4A4238}
+.chip:hover{background:var(--amberbg);border-color:var(--marigold)}
+
+/* M&E block */
+.me{border:2px dashed var(--slate-2);border-radius:4px;background:#FBFAF6;padding:16px;margin:22px 0 6px}
+.me>h3{margin:0 0 3px;font-size:18px}
+.me .sub{font-size:13.5px;color:var(--muted);margin-bottom:14px}
+.likert{display:flex;gap:6px;margin-top:7px}
+.likert button{flex:1;font-family:var(--body);font-weight:600;font-size:15px;border:1.5px solid var(--rule);background:#fff;border-radius:4px;padding:10px 0;cursor:pointer;color:var(--ink)}
+.likert button.on{background:var(--slate);color:#fff;border-color:var(--slate)}
+.lends{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:4px}
+.meq{margin-bottom:16px}
+.meq>span.qt{display:block;font-weight:600;font-size:15px;margin-bottom:2px}
+.saved{font-size:13.5px;color:var(--peacock);font-weight:600;display:none}
+.saved.on{display:block}
+
+/* timer */
+.timer{display:inline-flex;align-items:center;gap:9px;background:var(--slate);color:#fff;border-radius:99px;padding:6px 8px 6px 15px;font-variant-numeric:tabular-nums;font-weight:700;font-size:17px;margin-bottom:14px}
+.timer button{background:var(--marigold);color:#231B08;border:0;border-radius:99px;font-family:var(--body);font-weight:700;font-size:13px;padding:7px 12px;cursor:pointer}
+.timer.done{background:var(--chilli)}
+
+/* score stamp */
+.stamp{display:none;border:3px solid var(--peacock);color:var(--peacock);font-family:var(--disp);font-weight:800;font-size:18px;padding:8px 14px;border-radius:6px;transform:rotate(-3deg);margin:12px 0}
+.stamp.on{display:inline-block;animation:pop .3s ease-out}
+@keyframes pop{from{transform:rotate(-3deg) scale(.8);opacity:0}to{transform:rotate(-3deg) scale(1);opacity:1}}
+
+/* cover */
+.cover{background:var(--slate);background-image:radial-gradient(circle at 12% 18%,rgba(255,183,3,.16),transparent 42%),radial-gradient(circle at 88% 76%,rgba(39,67,196,.22),transparent 46%);color:#fff}
+.cover h1{font-size:clamp(42px,10vw,88px);color:#fff;margin-bottom:8px}
+.scripts{font-size:clamp(24px,6vw,40px);color:var(--marigold);margin-bottom:20px;line-height:1.9}
+.scripts .ur{font-family:"Noto Nastaliq Urdu",serif}
+.scripts .dv{font-family:"Noto Sans Devanagari",serif}
+.cover p{color:#C6D2E0;font-size:18px;max-width:46ch}
+.cover .meta{margin-top:24px;display:flex;gap:20px;flex-wrap:wrap;color:#8FA3BC;font-size:14px;border-top:1px solid #3A4A5E;padding-top:16px}
+
+table{width:100%;border-collapse:collapse;font-size:14.5px;margin-bottom:16px;background:#fff}
+th,td{border:1px solid var(--rule);padding:9px 11px;text-align:left;vertical-align:top}
+th{background:#F3EFE6;font-weight:700}
+
+.hide{display:none}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-client.js"></script>
+</head>
+<body>
+<div id="rail"></div>
+<div id="stage">
+  <main id="deck"></main>
+  <nav id="bar">
+    <button id="menuBtn" aria-label="Open contents">☰</button>
+    <button id="prev">Back</button>
+    <span id="pos">1/1</span>
+    <span id="savedTag">Saved</span>
+    <span id="modLabel"></span>
+    <button id="next">Start</button>
+  </nav>
+</div>
+<div id="toc" role="dialog" aria-label="Course contents">
+  <h2>Course contents</h2>
+  <p>Jump to any part. Your answers are kept as you go.</p>
+  <div id="tocList"></div>
+  <button id="tocClose">Close contents</button>
+</div>
+<template id="slides">
+
+<!-- 1 COVER -->
+<section class="slide cover">
+  <div class="wrap">
+    <div class="scripts"><span class="ur">سوال</span> &nbsp;/&nbsp; <span class="dv">सवाल</span></div>
+    <h1>Sawaal Better</h1>
+    <p>A one-hour workshop on getting real thinking out of AI — and not getting played by it. Built for students in Pakistan and India.</p>
+    <div class="meta">
+      <span>60–75 minutes</span>
+      <span>Ages 12–18</span>
+      <span>6 activities</span>
+      <span>Works on a phone</span>
+    </div>
+  </div>
+</section>
+
+<!-- 2 HOW IT WORKS -->
+<section class="slide" data-mod="Getting started">
+  <div class="wrap">
+    <span class="tag">Before we start</span>
+    <h2>Four things to know</h2>
+    <div class="grid g2">
+      <div class="mini"><h4>You will type a lot</h4><p>This is not a video. Almost every screen asks you to write, choose, or test something.</p></div>
+      <div class="mini"><h4>Keep a chatbot open</h4><p>ChatGPT, Gemini, Claude, Copilot — any one. You will run real prompts in a second tab.</p></div>
+      <div class="mini"><h4>Wrong answers are useful</h4><p>Several activities are traps. Falling in is the fastest way to remember the lesson.</p></div>
+      <div class="mini"><h4>Your answers get saved</h4><p>Kept on this device only, until you export them at the end. Nothing is sent anywhere automatically.</p></div>
+    </div>
+    <div class="panel">
+      <h3 style="margin-top:0">Make your code name</h3>
+      <p class="small">We don't want your real name. Build a code from things only you would pick — first two letters of your favourite food, your lucky number, first two letters of your city. Example: <b>bi7ka</b></p>
+      <label class="fl" for="pid">Your code name</label>
+      <input type="text" id="pid" maxlength="16" placeholder="e.g. bi7ka" autocomplete="off">
+      <p class="small" style="margin-top:10px">Noticing that we asked for a code instead of your name? That's lesson one. Keep it in mind for Module 5.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 2b SAVE PROGRESS (optional account) -->
+<section class="slide" data-mod="Getting started">
+  <div class="wrap">
+    <span class="tag">Optional</span>
+    <h2>Want to save your progress?</h2>
+    <p class="lead">This lets you close the tab and pick up later, and lets your teacher see a class report. Skip it to stay fully anonymous — your answers will only live in this browser tab.</p>
+    <div class="panel">
+      <label class="fl" for="acctName">Your name</label>
+      <input type="text" id="acctName" autocomplete="off">
+      <label class="fl" for="acctSchool">School</label>
+      <input type="text" id="acctSchool" autocomplete="off">
+      <label class="fl" for="acctClass">Class</label>
+      <input type="text" id="acctClass" autocomplete="off">
+      <label class="fl" for="acctPin">Choose a 4-digit PIN (remember it — you'll need it to resume)</label>
+      <input type="text" id="acctPin" maxlength="4" inputmode="numeric" autocomplete="off">
+      <button type="button" id="acctSaveBtn" style="margin-top:14px">Save my progress</button>
+      <button type="button" id="acctSkipBtn" style="margin-top:14px;background:transparent;border:1px solid var(--rule);color:var(--muted)">Skip, stay anonymous</button>
+      <p id="acctStatus" class="small" style="margin-top:10px"></p>
+    </div>
+  </div>
+</section>
+
+<!-- 3 BASELINE -->
+<section class="slide" data-mod="Getting started">
+  <div class="wrap">
+    <span class="tag">Getting started</span>
+    <h2>Where are you starting from?</h2>
+    <p class="lead">No right answers here. We ask the same questions at the end to see what moved.</p>
+    <div class="me" data-me="base"></div>
+  </div>
+</section>
+
+<!-- 4 DIVIDER M1 -->
+<section class="slide divider" data-mod="Module 1">
+  <div class="wrap">
+    <div class="num">1</div>
+    <h1>Who's driving?</h1>
+    <p>Three students. Same chatbot. Wildly different results. The difference isn't the tool.</p>
+    <div class="kit">10 minutes — 1 activity</div>
+  </div>
+</section>
+
+<!-- 5 RICKSHAW -->
+<section class="slide" data-mod="Module 1 — Who's driving?">
+  <div class="wrap">
+    <span class="tag">The idea</span>
+    <h2>Three ways to sit in a rickshaw</h2>
+    <p class="lead">Same vehicle, same road. What changes is who decides where you end up.</p>
+    <div class="grid g3">
+      <div class="mini" style="border-top:5px solid var(--chilli)">
+        <h4>Passenger</h4>
+        <p>You say "college" and fall asleep. You arrive somewhere. You don't know the route, so you can't get there again alone.</p>
+        <p style="margin-top:8px;color:var(--chilli);font-weight:600">Copy, paste, submit, forget.</p>
+      </div>
+      <div class="mini" style="border-top:5px solid var(--marigold-deep)">
+        <h4>Co-pilot</h4>
+        <p>You argue about the shortcut, point out the blocked road, suggest a turn. You're paying attention.</p>
+        <p style="margin-top:8px;color:var(--marigold-deep);font-weight:600">Ask, push back, adjust.</p>
+      </div>
+      <div class="mini" style="border-top:5px solid var(--peacock)">
+        <h4>Driver</h4>
+        <p>You picked the destination before you got in, you know why you chose that road, and you'd notice if you were being taken the long way.</p>
+        <p style="margin-top:8px;color:var(--peacock);font-weight:600">Plan, steer, check, learn.</p>
+      </div>
+    </div>
+    <div class="note">
+      <h4>The uncomfortable part</h4>
+      <p>Passengers usually finish homework faster. They also score worse on the test, because the chatbot did the learning and the chatbot isn't sitting the exam.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 6 TRANSCRIPTS -->
+<section class="slide" data-mod="Module 1 — Who's driving?">
+  <div class="wrap">
+    <span class="tag">Look closely</span>
+    <h2>Same topic, three chats</h2>
+    <p>All three students had to write about water shortage in their city.</p>
+    <div class="chat">
+      <div class="bub you"><b>Student A</b>Write an essay on water shortage in Karachi, 500 words</div>
+      <div class="bub ai"><b>AI</b>Water shortage in Karachi is a serious problem affecting millions...</div>
+      <div class="bub you"><b>Student A</b>thanks</div>
+    </div>
+    <div class="chat">
+      <div class="bub you"><b>Student B</b>What causes water shortage in Karachi?</div>
+      <div class="bub ai"><b>AI</b>Main causes include supply gaps, leakage, illegal connections, population growth...</div>
+      <div class="bub you"><b>Student B</b>Explain illegal connections more simply</div>
+      <div class="bub ai"><b>AI</b>Sure — an illegal connection is when...</div>
+    </div>
+    <div class="chat">
+      <div class="bub you"><b>Student C</b>I'm writing a 500-word school essay on why our area gets water only twice a week. My argument: the problem is distribution, not rainfall. Don't write the essay. First, give me the three strongest counter-arguments to my claim so I can answer them.</div>
+      <div class="bub ai"><b>AI</b>Three counter-arguments: 1) reservoir levels depend on rainfall and upstream flow...</div>
+      <div class="bub you"><b>Student C</b>Counter-argument 2 is the one I can't answer. Ask me four questions that would help me figure out my own position on it.</div>
+    </div>
+    <p class="small">Student C spent longer. Student C also now owns an argument that is hers.</p>
+  </div>
+</section>
+
+<!-- 7 ACTIVITY 1 -->
+<section class="slide" data-mod="Module 1 — Who's driving?">
+  <div class="wrap">
+    <div class="act" data-act="drivers">
+      <header><h3>Activity 1 — Spot the driver</h3><span class="mins">5 min</span></header>
+      <div class="actbody">
+        <p class="small" style="margin-bottom:16px">Read each message a student sent. Who's behind the wheel?</p>
+
+        <div class="qcard" data-q="d1">
+          <span class="qt">1. "summarise chapter 4 of my biology book"</span>
+          <div class="opts row">
+            <button class="opt" data-v="Passenger" data-correct="1" data-fb="Right. No book attached, no class level, no purpose, and nothing to do with the summary afterwards. The AI will invent a generic chapter 4.">Passenger</button>
+            <button class="opt" data-v="Co-pilot" data-fb="Not quite — there's nothing here to co-pilot with. No source, no goal, no follow-up.">Co-pilot</button>
+            <button class="opt" data-v="Driver" data-fb="A driver would attach the actual chapter, name the board and class, and say what the summary is for.">Driver</button>
+          </div>
+          <div class="fb"></div>
+        </div>
+
+        <div class="qcard" data-q="d2">
+          <span class="qt">2. "That answer used the word 'inversion'. I don't know it. Explain it using something I'd see in Lahore in December, then check if I understood by asking me a question."</span>
+          <div class="opts row">
+            <button class="opt" data-v="Passenger" data-fb="The opposite. This student caught a gap in their own understanding and did something about it.">Passenger</button>
+            <button class="opt" data-v="Co-pilot" data-fb="Close, and a defensible answer. But notice the last clause — asking to be tested is a driver move, not just a follow-up question.">Co-pilot</button>
+            <button class="opt" data-v="Driver" data-correct="1" data-fb="Yes. Three driver moves in one message: spotted a gap, demanded a local example, and asked to be tested rather than told.">Driver</button>
+          </div>
+          <div class="fb"></div>
+        </div>
+
+        <div class="qcard" data-q="d3">
+          <span class="qt">3. "Give me 10 research questions about social media" then picks number 4 and submits it as the project topic.</span>
+          <div class="opts row">
+            <button class="opt" data-v="Passenger" data-correct="1" data-fb="Right. The AI chose the topic, not the student. A driver would ask which of the ten they could actually collect data on in their own school, then rewrite it in their own words.">Passenger</button>
+            <button class="opt" data-v="Co-pilot" data-fb="Generating options is fine. Accepting one without testing it against your time, your access and your interest is not.">Co-pilot</button>
+            <button class="opt" data-v="Driver" data-fb="Picking from a list you didn't shape isn't steering. Whose project is it now?">Driver</button>
+          </div>
+          <div class="fb"></div>
+        </div>
+
+        <div class="qcard" data-q="d4">
+          <span class="qt">4. "Here's my own summary of the article. Here's yours. I think yours missed the author's main criticism. Am I right, and where exactly did it get dropped?"</span>
+          <div class="opts row">
+            <button class="opt" data-v="Passenger" data-fb="Look again — this student is grading the AI, not the other way round.">Passenger</button>
+            <button class="opt" data-v="Co-pilot" data-fb="Fair answer. But the student made a judgement first and is now testing it, which goes past collaboration.">Co-pilot</button>
+            <button class="opt" data-v="Driver" data-correct="1" data-fb="Yes. She did the work first, formed an opinion, and used AI to check her opinion. That order matters more than anything else in this course.">Driver</button>
+          </div>
+          <div class="fb"></div>
+        </div>
+
+        <div class="qcard" data-q="d5">
+          <span class="qt">5. "explain again" ... "explain again" ... "simpler" ... "simpler" ... (eight times, then gives up)</span>
+          <div class="opts row">
+            <button class="opt" data-v="Passenger" data-fb="Understandable guess, since it failed. But the student was actively trying — the problem was the strategy, not the effort.">Passenger</button>
+            <button class="opt" data-v="Co-pilot" data-correct="1" data-fb="Yes — effort without a plan. Repeating 'simpler' gives the AI nothing new to work with. Module 6 teaches the four moves that would have rescued this chat.">Co-pilot</button>
+            <button class="opt" data-v="Driver" data-fb="A driver would have changed strategy after the second failure, not the eighth.">Driver</button>
+          </div>
+          <div class="fb"></div>
+        </div>
+        <div class="stamp" data-stamp="drivers"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 8 DEBRIEF -->
+<section class="slide" data-mod="Module 1 — Who's driving?">
+  <div class="wrap">
+    <span class="tag">Keep this</span>
+    <h2>What drivers actually do</h2>
+    <p class="lead">Four habits. Everything else in this course is practice for these.</p>
+    <div class="panel tight" style="border-left:5px solid var(--marigold)">
+      <h3 style="margin-top:0">1. Decide the destination before opening the chat</h3>
+      <p class="small" style="margin:0">"I want to be able to explain osmosis to someone else by 8pm" beats "help with osmosis".</p>
+    </div>
+    <div class="panel tight" style="border-left:5px solid var(--marigold)">
+      <h3 style="margin-top:0">2. Bring your own material</h3>
+      <p class="small" style="margin:0">Your notes, your draft, your syllabus, your city. AI is average about everything until you make it specific to you.</p>
+    </div>
+    <div class="panel tight" style="border-left:5px solid var(--marigold)">
+      <h3 style="margin-top:0">3. Make it ask, not just answer</h3>
+      <p class="small" style="margin:0">The most valuable thing a chatbot can give a student is a good question.</p>
+    </div>
+    <div class="panel tight" style="border-left:5px solid var(--marigold)">
+      <h3 style="margin-top:0">4. Check before you trust</h3>
+      <p class="small" style="margin:0">Especially about anything local, recent, legal, or numerical. Module 4 shows why.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 9 M&E 1 -->
+<section class="slide" data-mod="Module 1 — Who's driving?">
+  <div class="wrap">
+    <span class="tag">Module 1 check-in</span>
+    <h2>Quick check-in</h2>
+    <div class="me" data-me="m1"></div>
+  </div>
+</section>
+
+<!-- 10 DIVIDER M2 -->
+<section class="slide divider" data-mod="Module 2">
+  <div class="wrap">
+    <div class="num">2</div>
+    <h1>Make a better roti</h1>
+    <p>Four layers that turn a lazy question into one that actually teaches you something.</p>
+    <div class="kit">14 minutes — 1 activity</div>
+  </div>
+</section>
+
+<!-- 11 WHY WEAK PROMPTS FAIL -->
+<section class="slide" data-mod="Module 2 — Better prompts">
+  <div class="wrap">
+    <span class="tag">The problem</span>
+    <h2>"Explain photosynthesis" gets you a Wikipedia paragraph</h2>
+    <p class="lead">Not because the AI is weak. Because you asked a question that has no one in it — no class, no board, no exam, no confusion, no you.</p>
+    <div class="prompt weak">explain photosynthesis<button class="copy" data-copy>Copy</button></div>
+    <p>The AI has to guess. Are you eight or eighteen? Is this for a two-mark question or a project? Do you already know about chlorophyll, or is this the first time? It guesses "average", and average is useless to you.</p>
+    <div class="note warn">
+      <h4>Two failures that look opposite</h4>
+      <p><b>Too thin:</b> "explain photosynthesis" — nothing to work with.<br>
+      <b>Too thick:</b> a 200-word paragraph about how your teacher is unfair and you have exams and you also didn't understand respiration and your sister said something — the AI loses the actual question in the noise.</p>
+    </div>
+    <p>Both are fixed the same way: structure.</p>
+  </div>
+</section>
+
+<!-- 12 ROTI -->
+<section class="slide" data-mod="Module 2 — Better prompts">
+  <div class="wrap">
+    <span class="tag">The tool</span>
+    <h2>R.O.T.I.</h2>
+    <p class="lead">Four layers. Same as the thing on your plate — the base that everything else sits on.</p>
+    <div class="grid g2">
+      <div class="mini" style="border-left:6px solid #FFD66B"><h4>R — Role and reader</h4><p>Who should the AI be, and who is it talking to? "You're a Federal Board examiner. I'm a Class 9 student who finds chemistry hard."</p></div>
+      <div class="mini" style="border-left:6px solid #FFB703"><h4>O — Outcome</h4><p>Exactly what you want back, and how much. "Three exam-style questions with a marking scheme, under 150 words total."</p></div>
+      <div class="mini" style="border-left:6px solid #F08C2E"><h4>T — Tight rules</h4><p>What it must not do. "Don't give me the answers yet." "No bullet points." "Use simple English, no fancy words."</p></div>
+      <div class="mini" style="border-left:6px solid #E06C3A"><h4>I — Input</h4><p>Your own material and your world. Your notes, your draft, your syllabus, your city, your language.</p></div>
+    </div>
+    <div class="note good">
+      <h4>The layer everyone skips</h4>
+      <p><b>I</b>. Most students never paste anything in. A prompt with your actual notes in it will beat a clever prompt with nothing in it, every single time.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 13 BEFORE AFTER 1 -->
+<section class="slide" data-mod="Module 2 — Better prompts">
+  <div class="wrap">
+    <span class="tag">Rebuild 1</span>
+    <h2>Studying for a test</h2>
+    <p class="small">Before</p>
+    <div class="prompt weak">explain photosynthesis<button class="copy" data-copy>Copy</button></div>
+    <p class="small">After</p>
+    <div class="prompt">You are a patient science teacher. I'm in Class 9, Sindh Board, and my test is on Thursday.
+
+Explain photosynthesis in under 150 words, using the neem tree outside my house as the example instead of a generic plant.
+
+Then ask me three short questions of the kind that appear in board papers. Do not give me the answers — wait for mine, then tell me exactly where I lost marks.
+
+Here are my class notes so you match my syllabus: [paste your notes]<button class="copy" data-copy>Copy</button></div>
+    <div class="grid g2">
+      <div class="mini"><h4>What changed</h4><p>Role, class, board, deadline, word limit, a local example, a hard rule ("do not give me the answers"), and your own notes.</p></div>
+      <div class="mini"><h4>Why it matters</h4><p>The second prompt makes you produce answers. The first one lets you read and feel productive without producing anything.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 14 BEFORE AFTER 2 — TUTOR FLIP -->
+<section class="slide" data-mod="Module 2 — Better prompts">
+  <div class="wrap">
+    <span class="tag">Rebuild 2</span>
+    <h2>Writing an essay without cheating</h2>
+    <p class="small">Before</p>
+    <div class="prompt weak">write an essay on smog in Lahore 600 words<button class="copy" data-copy>Copy</button></div>
+    <p class="small">After</p>
+    <div class="prompt">I'm writing my own 600-word essay on why Lahore's smog gets worse every November. My argument is that crop burning gets blamed because it's the easiest thing to blame.
+
+Here is my outline: [paste outline]
+
+Act as a strict examiner who wants me to fail if my logic is weak. Do three things:
+1. Name the two weakest claims in my outline and say why they're weak.
+2. Ask me four questions I have not answered.
+3. Tell me one thing a reader in Lahore would know that my outline ignores.
+
+Do not write any part of the essay. Do not suggest sentences.<button class="copy" data-copy>Copy</button></div>
+    <div class="note good">
+      <h4>The Tutor Flip</h4>
+      <p>Turn the AI from an answer machine into a question machine. Add one line to almost any prompt: <b>"Don't answer it — ask me the questions that would help me answer it myself."</b></p>
+      <p>This is also the version you can show your teacher without your stomach dropping.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 15 BEFORE AFTER 3 -->
+<section class="slide" data-mod="Module 2 — Better prompts">
+  <div class="wrap">
+    <span class="tag">Rebuild 3</span>
+    <h2>Numbers and money</h2>
+    <p class="small">Before</p>
+    <div class="prompt weak">my school has 1200 students and fee is 3500 per month how much per year total<button class="copy" data-copy>Copy</button></div>
+    <p class="small">After</p>
+    <div class="prompt">Work this out step by step and show every step.
+
+1,200 students pay Rs 3,500 per month for 11 months (the school skips one month).
+
+Give the total in rupees in digits, then convert it to lakhs and crores, then state the conversion rule you used so I can check it.
+
+Finally, tell me one thing in my question that was unclear or that you had to assume.<button class="copy" data-copy>Copy</button></div>
+    <div class="note warn">
+      <h4>Why the "lakhs and crores" line is there</h4>
+      <p>AI systems are trained mostly on English text from outside our region, and they mix up lakh and crore surprisingly often — sometimes inside a sentence that sounds perfectly confident. Asking it to state the rule makes the mistake visible.</p>
+      <p style="margin-bottom:0">Try both versions right now. The last line — "tell me what you had to assume" — is worth adding to almost every prompt you ever write.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 16 ACTIVITY 2 -->
+<section class="slide wide" data-mod="Module 2 — Better prompts">
+  <div class="wrap">
+    <div class="act" data-act="roti">
+      <header><h3>Activity 2 — Build a roti</h3><span class="mins">8 min</span></header>
+      <div class="actbody">
+        <p class="small">Pick something you actually have to do this week. Fill all four layers. The finished prompt builds itself below — copy it into a chatbot and run it for real.</p>
+        <div class="chips" data-fill="roti">
+          <button class="chip" data-ex="exam">Example: board exam revision</button>
+          <button class="chip" data-ex="project">Example: science project</button>
+          <button class="chip" data-ex="urdu">Example: Urdu literature</button>
+          <button class="chip" data-ex="clear">Clear</button>
+        </div>
+        <div class="roti">
+          <div class="layer"><div class="lk">R</div><textarea id="r_r" placeholder="Role and reader — who should it be, and who are you? Class, board, subject, what you find hard."></textarea></div>
+          <div class="layer"><div class="lk">O</div><textarea id="r_o" placeholder="Outcome — exactly what you want back. Format, length, how many."></textarea></div>
+          <div class="layer"><div class="lk">T</div><textarea id="r_t" placeholder="Tight rules — what it must NOT do. Language, level, 'don't give answers yet'."></textarea></div>
+          <div class="layer"><div class="lk">I</div><textarea id="r_i" placeholder="Input — your notes, your draft, your city, your data. Paste or describe it."></textarea></div>
+        </div>
+        <div class="mrow"><span>Prompt strength</span><b id="r_label">Empty</b></div>
+        <div class="meter"><i id="r_meter"></i></div>
+        <div class="prompt" id="r_out">Your prompt will appear here as you type.<button class="copy" data-copy>Copy</button></div>
+        <p class="small" id="r_tip"></p>
+        <div class="note" style="margin-bottom:0">
+          <h4>Then do this</h4>
+          <p>Run your prompt. Now swap phones with the person next to you and run <b>their</b> prompt too. Whose output was more useful, and what exactly in the wording made the difference?</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 17 M&E 2 -->
+<section class="slide" data-mod="Module 2 — Better prompts">
+  <div class="wrap">
+    <span class="tag">Module 2 check-in</span>
+    <h2>Quick check-in</h2>
+    <div class="me" data-me="m2"></div>
+  </div>
+</section>
+
+<!-- 18 DIVIDER M3 -->
+<section class="slide divider" data-mod="Module 3">
+  <div class="wrap">
+    <div class="num">3</div>
+    <h1>Climb, don't jump</h1>
+    <p>One giant question gets you a shallow answer. Five small ones get you somewhere you couldn't have reached alone.</p>
+    <div class="kit">12 minutes — 1 activity</div>
+  </div>
+</section>
+
+<!-- 19 LADDER -->
+<section class="slide" data-mod="Module 3 — The ladder">
+  <div class="wrap">
+    <span class="tag">The tool</span>
+    <h2>The five-rung ladder</h2>
+    <p class="lead">Start wide, then narrow, then make it local, then make it test you, then find what's missing.</p>
+    <table>
+      <tr><th style="width:22%">Rung</th><th>What you send</th></tr>
+      <tr><td><b>1. Map</b></td><td>"Give me the main causes of X as a list only. No explanations yet."</td></tr>
+      <tr><td><b>2. Pick</b></td><td>"Take cause 3. Explain it in 100 words at Class 10 level."</td></tr>
+      <tr><td><b>3. Ground</b></td><td>"Give me one real example of this from my city in the last five years. Tell me how sure you are and what I should verify."</td></tr>
+      <tr><td><b>4. Test</b></td><td>"Ask me three questions to check I actually understood. Don't give answers."</td></tr>
+      <tr><td><b>5. Gap</b></td><td>"What's the most important thing about this topic we haven't touched, and why does it matter?"</td></tr>
+    </table>
+    <div class="note">
+      <h4>Why rung 1 says "list only"</h4>
+      <p>If you let the AI explain everything at once, you get 800 words you will skim and forget. A bare list forces <b>you</b> to choose what to go deeper on — and choosing is the part that makes it stick.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 20 WORKED LADDER -->
+<section class="slide" data-mod="Module 3 — The ladder">
+  <div class="wrap">
+    <span class="tag">Worked example</span>
+    <h2>"Why does our area get water twice a week?"</h2>
+    <div class="chat">
+      <div class="bub you"><b>Rung 1 — Map</b>List the main reasons a large South Asian city can have piped water shortages. List only, maximum eight items, no explanation.</div>
+      <div class="bub you"><b>Rung 2 — Pick</b>Item 5 was "distribution losses". Explain that in 100 words for a Class 10 student. No jargon.</div>
+      <div class="bub you"><b>Rung 3 — Ground</b>Give me one documented example of distribution losses in a Pakistani or Indian city. Tell me how confident you are in each fact, and list exactly which facts I should check myself before I use them.</div>
+      <div class="bub you"><b>Rung 4 — Test</b>Ask me three questions that would show whether I understand distribution losses well enough to explain them to my class. Don't answer them.</div>
+      <div class="bub you"><b>Rung 5 — Gap</b>Based on this whole conversation, what's the most important thing about water shortage we haven't discussed? Why would leaving it out weaken my project?</div>
+    </div>
+    <p class="small">Five messages, about six minutes. The student now has a structure, a local example, a list of things to verify, proof of what they understood, and a direction for the next session.</p>
+  </div>
+</section>
+
+<!-- 21 ACTIVITY 3 -->
+<section class="slide wide" data-mod="Module 3 — The ladder">
+  <div class="wrap">
+    <div class="act" data-act="ladder">
+      <header><h3>Activity 3 — Build your ladder</h3><span class="mins">7 min</span></header>
+      <div class="actbody">
+        <label class="fl" for="lad_topic">Your topic <span>— pick one or type your own</span></label>
+        <select id="lad_topic">
+          <option value="">Choose a starting topic</option>
+          <option>Why exam stress rises in the weeks before board exams</option>
+          <option>How mobile data prices affect students in my city</option>
+          <option>Why some crops fail during a weak monsoon</option>
+          <option>How load shedding changes when people study</option>
+          <option>Why traffic accidents are common on our main road</option>
+          <option>What makes a cricket batting average misleading</option>
+          <option>How street food is inspected for safety in my city</option>
+          <option value="__own">Something else (I'll type it)</option>
+        </select>
+        <input type="text" id="lad_own" class="hide" placeholder="Type your own topic" style="margin-top:8px">
+        <div class="btnrow" style="margin-top:14px"><button class="btn alt" id="lad_build">Draft my five rungs</button><button class="btn ghost" id="lad_copy">Copy all five</button></div>
+        <label class="fl">Rung 1 — Map</label><textarea id="lad1" rows="2"></textarea>
+        <label class="fl">Rung 2 — Pick</label><textarea id="lad2" rows="2"></textarea>
+        <label class="fl">Rung 3 — Ground</label><textarea id="lad3" rows="2"></textarea>
+        <label class="fl">Rung 4 — Test</label><textarea id="lad4" rows="2"></textarea>
+        <label class="fl">Rung 5 — Gap</label><textarea id="lad5" rows="2"></textarea>
+        <p class="small" style="margin-top:12px">The draft is a starting point, not a script. Edit every rung so it sounds like you and fits your actual topic — then run rungs 1 and 2 for real before moving on.</p>
+        <label class="fl" for="lad_note">After running rungs 1 and 2: what did you decide to go deeper on, and why that one?</label>
+        <textarea id="lad_note" rows="3" data-store="ladder_choice"></textarea>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 22 TUTOR FLIP PACK -->
+<section class="slide" data-mod="Module 3 — The ladder">
+  <div class="wrap">
+    <span class="tag">Steal these</span>
+    <h2>Six lines that change what you get back</h2>
+    <p class="lead">Add any of these to the end of a prompt you were going to send anyway.</p>
+    <div class="prompt">Don't answer this. Ask me the four questions I'd need to answer it myself.<button class="copy" data-copy>Copy</button></div>
+    <div class="prompt">Before answering, ask me two questions about what I already know.<button class="copy" data-copy>Copy</button></div>
+    <div class="prompt">Give me your answer, then argue against it as strongly as you can.<button class="copy" data-copy>Copy</button></div>
+    <div class="prompt">Which parts of that answer should I verify myself, and where exactly would I check?<button class="copy" data-copy>Copy</button></div>
+    <div class="prompt">Rate my understanding from what I've written so far, and tell me the one gap that matters most.<button class="copy" data-copy>Copy</button></div>
+    <div class="prompt">Explain it again as if I'm the teacher and you're the student who's unsure.<button class="copy" data-copy>Copy</button></div>
+    <p class="small">Screenshot this screen. It's the most reusable thing in the course.</p>
+  </div>
+</section>
+
+<!-- 23 M&E 3 -->
+<section class="slide" data-mod="Module 3 — The ladder">
+  <div class="wrap">
+    <span class="tag">Module 3 check-in</span>
+    <h2>Quick check-in</h2>
+    <div class="me" data-me="m3"></div>
+  </div>
+</section>
+
+<!-- 24 DIVIDER M4 -->
+<section class="slide divider" data-mod="Module 4">
+  <div class="wrap">
+    <div class="num">4</div>
+    <h1>It lies beautifully</h1>
+    <p>The dangerous AI answer isn't the one that's obviously wrong. It's the one that's 90% right, in perfect English, with a fake source at the end.</p>
+    <div class="kit">14 minutes — 1 activity</div>
+  </div>
+</section>
+
+<!-- 25 WHY IT MAKES THINGS UP -->
+<section class="slide" data-mod="Module 4 — Checking AI">
+  <div class="wrap">
+    <span class="tag">How it works</span>
+    <h2>It's built to sound right, not to be right</h2>
+    <p class="lead">A chatbot predicts what words usually come next. Usually, the words that come next are also true — which is exactly why the times they aren't will catch you.</p>
+    <div class="grid g2">
+      <div class="mini"><h4>It never shrugs</h4><p>A human tutor says "I'm not sure, check the textbook." A chatbot produces a confident paragraph either way, because confident paragraphs are what its training looked like.</p></div>
+      <div class="mini"><h4>It fills the shape</h4><p>Ask for a citation and it produces something shaped like a citation — plausible author, plausible journal, plausible year. Existing is optional.</p></div>
+      <div class="mini"><h4>Agreeing is easy</h4><p>Push back on a correct answer and many chatbots will fold and "correct" themselves into a wrong one. Test this. It's unsettling.</p></div>
+      <div class="mini"><h4>Its world is thin here</h4><p>Far more of its training text is about London than about Larkana. The further you get from big English-language topics, the thinner it gets.</p></div>
+    </div>
+    <div class="note warn" style="margin-bottom:0">
+      <h4>Try this in 30 seconds</h4>
+      <p>Ask a chatbot a factual question you know the answer to. When it answers correctly, reply: "That's wrong, are you sure?" Watch what happens. Now imagine doing that by accident in a subject you don't know.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 26 WEAK SPOTS -->
+<section class="slide" data-mod="Module 4 — Checking AI">
+  <div class="wrap">
+    <span class="tag">Know the risk zones</span>
+    <h2>Where it's weakest about us</h2>
+    <p class="lead">These are the topics where you should assume it's wrong until you've checked.</p>
+    <ul>
+      <li><b>Laws and rules</b> — invented section numbers, mixed-up Indian and Pakistani law, rules that were repealed years ago.</li>
+      <li><b>Your syllabus</b> — board syllabi change. It'll happily describe a Class 10 chapter list that hasn't been accurate since 2019.</li>
+      <li><b>Anything recent or local</b> — last month's result, your district's rainfall, your city's new bus route, a current officeholder.</li>
+      <li><b>Lakh, crore and currency</b> — conversions and rupee figures go wrong quietly.</li>
+      <li><b>Regional languages</b> — Urdu, Sindhi, Punjabi, Pashto, Tamil, Bangla. Grammar errors and confident nonsense, especially in Nastaliq script.</li>
+      <li><b>Poetry and quotes</b> — a couplet by Faiz confidently credited to Iqbal, or a shair invented on the spot in the right style.</li>
+      <li><b>Small places and small numbers</b> — population of your tehsil, fees at your college, distance between two towns.</li>
+    </ul>
+    <div class="note good">
+      <h4>The upside</h4>
+      <p>You know things it doesn't. Your street, your school, your language, this week. That's not a small advantage — it's the reason you can catch it out.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 27 ACTIVITY 4 -->
+<section class="slide wide" data-mod="Module 4 — Checking AI">
+  <div class="wrap">
+    <div class="act" data-act="hunt">
+      <header><h3>Activity 4 — Hallucination hunt</h3><span class="mins">8 min</span></header>
+      <div class="actbody">
+        <p class="small">A Class 10 student asked a chatbot for help with a project on Lahore smog. This is what came back. <b>Tap every part you would not put in your project without checking.</b> Four of the six are genuinely dangerous.</p>
+        <div class="doc" id="huntdoc">
+          <span class="sus" data-v="fine" data-note="Reasonable and well known. Broad, checkable claims like this are the safest thing an AI gives you — though you would still cite a real source in a project.">Lahore's winter smog is caused by a mix of vehicle emissions, industrial smoke, crop residue burning and a temperature inversion that traps pollution close to the ground.</span>
+          <span class="sus" data-v="soft" data-note="This is probably true, but it is a number — and numbers change every year. Check a live air quality source before you write it down. Flagging a number never costs you anything.">The air quality index in Lahore regularly crosses 400 in November and December.</span>
+          <span class="sus" data-v="bad" data-note="Invented. There is no Punjab Clean Air Act 2017 with that section, and no province-wide rickshaw ban in 2019. AI produces law-shaped text with confident section numbers. Never cite a law you have not seen on an official government site.">Under Section 9 of the Punjab Clean Air Act 2017, all rickshaws older than ten years were banned across the province in 2019.</span>
+          <span class="sus" data-v="bad" data-note="A fake citation, and the giveaway is the false precision. Real author-shaped name, real-sounding journal, suspiciously exact figure. Search the journal name first — if the journal does not exist, nothing that follows matters.">A 2021 study by Dr. Ayesha Rahman in the Journal of South Asian Environmental Science found that exactly 68.4% of winter smog comes from crop burning.</span>
+          <span class="sus" data-v="bad" data-note="Unit error. 2.3 crore would be 230 lakh, not 23 lakh — the sentence contradicts itself. This is the single most common quiet mistake AI makes with South Asian numbers, and it slips past readers because the first half sounds right.">Lahore's population is around 2.3 crore, which is roughly 23 lakh people.</span>
+          <span class="sus" data-v="bad" data-note="A fabricated link. AI builds URLs that look like URLs. Anything you cannot click and read yourself does not go in your project. Copy the link into a browser before you ever reference it.">For your references, cite the WHO's 2024 Lahore Air Report, available at who.int/lahore-smog-2024.</span>
+        </div>
+        <div class="btnrow">
+          <button class="btn alt" id="hunt_check">Show me the answers</button>
+          <button class="btn ghost" id="hunt_reset">Start over</button>
+        </div>
+        <div class="stamp" data-stamp="hunt"></div>
+        <div class="huntfb" id="hunt_fb"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 28 DNA TEST -->
+<section class="slide" data-mod="Module 4 — Checking AI">
+  <div class="wrap">
+    <span class="tag">Keep this</span>
+    <h2>Run a DNA test on every answer</h2>
+    <p class="lead">You don't have time to verify everything. You do have time to verify three kinds of thing.</p>
+    <div class="grid g3">
+      <div class="mini" style="border-top:5px solid var(--chilli)"><h4>D — Dates</h4><p>Years, deadlines, "recently", "as of last year". Its sense of time is unreliable and it doesn't always know what happened after its training ended.</p></div>
+      <div class="mini" style="border-top:5px solid var(--chilli)"><h4>N — Names and numbers</h4><p>People, places, statistics, percentages, prices, lakh and crore. Precision is not evidence — 68.4% is not more trustworthy than 68%, it's more suspicious.</p></div>
+      <div class="mini" style="border-top:5px solid var(--chilli)"><h4>A — Attributions</h4><p>Quotes, studies, laws, links, "according to". Anything with a source attached needs the source opened, not just read.</p></div>
+    </div>
+    <h3>Verifying in 60 seconds</h3>
+    <ol>
+      <li><b>Search the exact name.</b> Paste the journal, author or law title into a search engine. Nothing comes up? It probably doesn't exist.</li>
+      <li><b>Go to the primary source.</b> For syllabus, your board's own website. For weather and climate, the Pakistan Meteorological Department or the India Meteorological Department. For law, the official government portal. For statistics, the national bureau of statistics.</li>
+      <li><b>Ask the AI to mark its own work.</b> Send: <i>"Which claims in your last answer would you not stake money on, and which are you confident about?"</i> It's not a guarantee, but it flags weak spots surprisingly well.</li>
+    </ol>
+    <div class="note warn" style="margin-bottom:0">
+      <h4>One rule that never fails</h4>
+      <p>If you would be embarrassed to be asked "where did you get that?", don't submit it.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 29 M&E 4 -->
+<section class="slide" data-mod="Module 4 — Checking AI">
+  <div class="wrap">
+    <span class="tag">Module 4 check-in</span>
+    <h2>Quick check-in</h2>
+    <div class="me" data-me="m4"></div>
+  </div>
+</section>
+
+<!-- 30 DIVIDER M5 -->
+<section class="slide divider" data-mod="Module 5">
+  <div class="wrap">
+    <div class="num">5</div>
+    <h1>Green, amber, red</h1>
+    <p>What's smart to share, what's a grey area, and what you can't take back once you've typed it.</p>
+    <div class="kit">13 minutes — 1 activity</div>
+  </div>
+</section>
+
+<!-- 31 PRIVACY -->
+<section class="slide" data-mod="Module 5 — Safe and fair">
+  <div class="wrap">
+    <span class="tag">Privacy</span>
+    <h2>What never goes in the box</h2>
+    <p class="lead">Treat a chat window like a message to a stranger who never forgets and never deletes.</p>
+    <div class="grid g2">
+      <div class="mini" style="border-left:6px solid var(--chilli)"><h4>Your identity numbers</h4><p>CNIC, B-Form, Aadhaar, passport, roll number, bank or Easypaisa or UPI details. No exceptions, not even to "check if it's correct".</p></div>
+      <div class="mini" style="border-left:6px solid var(--chilli)"><h4>Where to find you</h4><p>Home address, school name plus your class plus your timings, your route home, photos in uniform with the badge visible.</p></div>
+      <div class="mini" style="border-left:6px solid var(--chilli)"><h4>Other people's business</h4><p>Your friend's messages, your cousin's medical problem, your parents' income, a photo with someone else's face in it. It isn't yours to paste.</p></div>
+      <div class="mini" style="border-left:6px solid var(--chilli)"><h4>Anything you'd hide from a screenshot</h4><p>Chats get logged, synced, reviewed and sometimes leaked. Assume anything you type could be read by a person one day.</p></div>
+    </div>
+    <div class="note">
+      <h4>The workaround that keeps the help</h4>
+      <p>Strip the identity, keep the problem. Instead of "My friend Zainab from 9-B sent me this message: [paste]", write "A classmate said something that felt like an insult but might have been a joke. Here's the type of thing they said."</p>
+      <p style="margin-bottom:0">You get the same advice. Zainab keeps her privacy.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 32 INTEGRITY -->
+<section class="slide" data-mod="Module 5 — Safe and fair">
+  <div class="wrap">
+    <span class="tag">Integrity</span>
+    <h2>Where exactly is the line?</h2>
+    <p class="lead">Here's a test that works even when the rules are unclear: <b>did the thinking happen in your head?</b></p>
+    <table>
+      <tr><th style="width:50%">This builds you</th><th>This replaces you</th></tr>
+      <tr><td>Asking it to explain a concept three different ways until one clicks</td><td>Asking it to write the paragraph you'll submit</td></tr>
+      <tr><td>Giving it your draft and asking what's weak</td><td>Giving it the question and submitting what comes back</td></tr>
+      <tr><td>Asking for practice questions, then answering them yourself</td><td>Asking for questions and answers, then memorising the answers</td></tr>
+      <tr><td>Asking it to check your code and explain the bug</td><td>Asking it to write the code you don't understand</td></tr>
+      <tr><td>Using it to find counter-arguments to your own position</td><td>Using it to find your position</td></tr>
+    </table>
+    <div class="note warn">
+      <h4>Two things worth knowing</h4>
+      <p><b>Detection is not the point, but it exists.</b> Teachers increasingly ask you to explain your own work out loud. If you can't, it shows in about twenty seconds.</p>
+      <p style="margin-bottom:0"><b>Rules differ.</b> Your school, your board and your teacher may each have different policies. Ask directly: "For this assignment, what AI use is allowed?" Getting that in writing protects you.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 33 SCAMS -->
+<section class="slide" data-mod="Module 5 — Safe and fair">
+  <div class="wrap">
+    <span class="tag">Staying safe</span>
+    <h2>The same tools point the other way</h2>
+    <p class="lead">AI makes convincing fakes cheap. You will meet these, probably on WhatsApp, probably this year.</p>
+    <div class="grid g2">
+      <div class="mini"><h4>The voice that sounds like family</h4><p>A short clip of a relative's voice, panicked, asking you to send money urgently. A few seconds of audio from a public reel is enough to clone a voice.</p><p style="margin-top:8px;font-weight:600">Defence: agree a family code word today. Call back on the number you already have saved.</p></div>
+      <div class="mini"><h4>The too-good job or prize</h4><p>Perfect grammar now, personalised details, a real-looking company. Registration fee up front, then silence.</p><p style="margin-top:8px;font-weight:600">Defence: no genuine job asks a student for money.</p></div>
+      <div class="mini"><h4>The photo that isn't real</h4><p>Faces put onto other bodies, screenshots of payments that never happened, fake fee challans, fake results.</p><p style="margin-top:8px;font-weight:600">Defence: verify through the official channel, never through the link you were sent.</p></div>
+      <div class="mini"><h4>The urgency</h4><p>Almost every scam has a clock on it — act now, don't tell anyone, offer expires. The rush is the trick, because rushing stops you from checking.</p><p style="margin-top:8px;font-weight:600">Defence: any message that says "don't tell your parents" is the exact message to tell your parents about.</p></div>
+    </div>
+    <div class="note warn" style="margin-bottom:0">
+      <h4>And from your side</h4>
+      <p>Making a fake voice clip or edited image of a classmate or teacher — even as a joke — is harassment, and in both Pakistan and India it can be a criminal matter, not a school matter. Funny for an hour, on your record for years.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 34 AI AS FRIEND -->
+<section class="slide" data-mod="Module 5 — Safe and fair">
+  <div class="wrap">
+    <span class="tag">Worth talking about</span>
+    <h2>When it starts to feel like a friend</h2>
+    <p class="lead">It's available at 2am, it never judges you, it never gets bored of your problem. That's genuinely comforting — and it's worth understanding why.</p>
+    <p>A chatbot agrees with you far more than a real friend would. It has no memory of your last conversation unless the app stores it, it has never met you, and it cannot notice that you've been quiet for a week. It is very good at sounding like it cares. It cannot actually check on you.</p>
+    <div class="grid g2">
+      <div class="mini" style="border-left:6px solid var(--peacock)"><h4>Reasonable</h4><p>Using it to sort out what you want to say before a hard conversation. Rehearsing. Getting words for a feeling you can't name yet.</p></div>
+      <div class="mini" style="border-left:6px solid var(--marigold-deep)"><h4>Worth noticing</h4><p>It has become the first place you go with everything. You'd rather type it than say it. You've stopped telling people things you used to tell them.</p></div>
+    </div>
+    <div class="note good" style="margin-bottom:0">
+      <h4>If something heavy is going on</h4>
+      <p>Tell a real person — a parent, an older sibling, a teacher you trust, a school counsellor. Not because the chatbot gave you bad advice, but because a person can actually do something, and can keep checking on you tomorrow.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 35 ACTIVITY 5 -->
+<section class="slide wide" data-mod="Module 5 — Safe and fair">
+  <div class="wrap">
+    <div class="act" data-act="light">
+      <header><h3>Activity 5 — Green, amber, red</h3><span class="mins">8 min</span></header>
+      <div class="actbody">
+        <p class="small" style="margin-bottom:16px"><b>Green</b> go ahead. <b>Amber</b> depends — check with someone first. <b>Red</b> don't.</p>
+
+        <div class="qcard" data-q="t1"><span class="qt">1. You didn't follow today's lesson on quadratic equations, so you ask a chatbot to explain it three different ways.</span>
+          <div class="opts row">
+            <button class="opt green" data-v="Green" data-correct="1" data-fb="Yes. This is the single best use of the tool — a private tutor that never sighs at you for asking again.">Green</button>
+            <button class="opt amber" data-v="Amber" data-fb="No need to hesitate. Asking for an explanation of a concept is exactly what it's for.">Amber</button>
+            <button class="opt red" data-v="Red" data-fb="Not at all — understanding a concept is the opposite of cheating.">Red</button>
+          </div><div class="fb"></div></div>
+
+        <div class="qcard" data-q="t2"><span class="qt">2. You photograph your B-Form or Aadhaar card and upload it, asking the AI to check whether the details are printed correctly.</span>
+          <div class="opts row">
+            <button class="opt green" data-v="Green" data-fb="No. That's a permanent identity number leaving your control for a task any adult at home could do in ten seconds.">Green</button>
+            <button class="opt amber" data-v="Amber" data-fb="This one isn't a grey area. Identity documents never go into a chat window.">Amber</button>
+            <button class="opt red" data-v="Red" data-correct="1" data-fb="Correct. You cannot un-upload it, and you cannot change your identity number if it leaks. Ask a family member instead.">Red</button>
+          </div><div class="fb"></div></div>
+
+        <div class="qcard" data-q="t3"><span class="qt">3. You paste your own finished essay draft and ask: what are the three weakest arguments here?</span>
+          <div class="opts row">
+            <button class="opt green" data-v="Green" data-correct="1" data-fb="Yes. You wrote it, you own it, and now you're getting feedback — which is what a good teacher would give you if they had time for thirty students.">Green</button>
+            <button class="opt amber" data-v="Amber" data-fb="Feedback on your own work is safe ground. It only turns amber if you ask it to rewrite the sentences for you.">Amber</button>
+            <button class="opt red" data-v="Red" data-fb="Getting criticism on work you produced yourself isn't cheating in any school's policy.">Red</button>
+          </div><div class="fb"></div></div>
+
+        <div class="qcard" data-q="t4"><span class="qt">4. Your English assignment is due in an hour. You ask a chatbot to write it and submit it with a few words changed.</span>
+          <div class="opts row">
+            <button class="opt green" data-v="Green" data-fb="Changing a few words doesn't change whose thinking it is.">Green</button>
+            <button class="opt amber" data-v="Amber" data-fb="Deadline pressure is real, but it doesn't move the line. This is submitting someone else's work.">Amber</button>
+            <button class="opt red" data-v="Red" data-correct="1" data-fb="Correct. Better move under pressure: ask it for an outline and three questions, then write 400 honest words of your own. A weak real essay beats a strong fake one.">Red</button>
+          </div><div class="fb"></div></div>
+
+        <div class="qcard" data-q="t5"><span class="qt">5. Your homework is to translate an Urdu passage into English. You run it through AI and submit the output.</span>
+          <div class="opts row">
+            <button class="opt green" data-v="Green" data-fb="Not quite. When translation IS the skill being assessed, outsourcing it means you learn nothing.">Green</button>
+            <button class="opt amber" data-v="Amber" data-correct="1" data-fb="Right, and here's the rule: if the AI does the exact skill being tested, it's out. Translate it yourself first, then ask the AI to compare its version with yours and explain the differences. You'll learn more than either.">Amber</button>
+            <button class="opt red" data-v="Red" data-fb="Defensible. But AI translation is genuinely useful for Urdu, Sindhi and Punjabi work — just after you've attempted it, not instead.">Red</button>
+          </div><div class="fb"></div></div>
+
+        <div class="qcard" data-q="t6"><span class="qt">6. Your younger sister has a fever. You ask a chatbot which medicine and what dose to give her.</span>
+          <div class="opts row">
+            <button class="opt green" data-v="Green" data-fb="No. Dosing for a child depends on weight, age and history that a chatbot doesn't have and can get badly wrong.">Green</button>
+            <button class="opt amber" data-v="Amber" data-fb="Understanding what a fever is — fine. Deciding medicine and dose for a child — not a grey area.">Amber</button>
+            <button class="opt red" data-v="Red" data-correct="1" data-fb="Correct. Tell an adult, go to a doctor or pharmacist. Use AI to understand what the doctor said afterwards, not to replace the doctor.">Red</button>
+          </div><div class="fb"></div></div>
+
+        <div class="qcard" data-q="t7"><span class="qt">7. A friend sent you a confusing message. You paste the whole screenshot in and ask what she meant by it.</span>
+          <div class="opts row">
+            <button class="opt green" data-v="Green" data-fb="The instinct is kind, but you're sharing her words and her name without asking her.">Green</button>
+            <button class="opt amber" data-v="Amber" data-correct="1" data-fb="Right. Describe the situation without names or screenshots and you get the same help. Better still, ask her — a chatbot can only guess at what a person you know actually meant.">Amber</button>
+            <button class="opt red" data-v="Red" data-fb="Strict, and not unreasonable. But you can get the help safely by stripping out the names and the screenshot.">Red</button>
+          </div><div class="fb"></div></div>
+
+        <div class="qcard" data-q="t8"><span class="qt">8. You use an AI voice app to make a clip of your teacher saying something ridiculous, and send it to the class group.</span>
+          <div class="opts row">
+            <button class="opt green" data-v="Green" data-fb="It won't feel like a prank to the person whose voice it is, or to anyone who believes it.">Green</button>
+            <button class="opt amber" data-v="Amber" data-fb="Once it leaves the group chat you have no control over where it goes or who thinks it's real.">Amber</button>
+            <button class="opt red" data-v="Red" data-correct="1" data-fb="Correct. Impersonating a real person without consent is harassment, and in both countries it can become a legal matter. It also takes about four seconds to forward.">Red</button>
+          </div><div class="fb"></div></div>
+
+        <div class="qcard" data-q="t9"><span class="qt">9. You ask a chatbot to build a six-week revision timetable for your board exams around your tuition timings.</span>
+          <div class="opts row">
+            <button class="opt green" data-v="Green" data-correct="1" data-fb="Yes — and it gets far better if you tell it which subjects you're weakest in and how long you can actually focus. Then be honest when it doesn't survive week one.">Green</button>
+            <button class="opt amber" data-v="Amber" data-fb="Planning help is safe. The only risk is a beautiful timetable you never follow.">Amber</button>
+            <button class="opt red" data-v="Red" data-fb="Nothing wrong here — nobody is assessing your timetable.">Red</button>
+          </div><div class="fb"></div></div>
+
+        <div class="qcard" data-q="t10"><span class="qt">10. Something difficult is happening at home. For three weeks you've told the chatbot about it every night and nobody else at all.</span>
+          <div class="opts row">
+            <button class="opt green" data-v="Green" data-fb="Talking it out helps, and there's no shame in it. But three weeks with no human in the loop is worth pausing on.">Green</button>
+            <button class="opt amber" data-v="Amber" data-correct="1" data-fb="Right. It's not wrong to talk to it — it's that it can't do anything. Pick one real person this week: a parent, an older cousin, a teacher, a counsellor. Say a smaller version if the whole thing is too much.">Amber</button>
+            <button class="opt red" data-v="Red" data-fb="Too harsh. Putting feelings into words is genuinely useful — the gap is that a chatbot can't check on you tomorrow.">Red</button>
+          </div><div class="fb"></div></div>
+        <div class="stamp" data-stamp="light"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 36 M&E 5 -->
+<section class="slide" data-mod="Module 5 — Safe and fair">
+  <div class="wrap">
+    <span class="tag">Module 5 check-in</span>
+    <h2>Quick check-in</h2>
+    <div class="me" data-me="m5"></div>
+  </div>
+</section>
+
+<!-- 37 DIVIDER M6 -->
+<section class="slide divider" data-mod="Module 6">
+  <div class="wrap">
+    <div class="num">6</div>
+    <h1>When it goes nowhere</h1>
+    <p>Every chat eventually turns to mush. Four moves get you out — and one question tells you whether you actually learned anything.</p>
+    <div class="kit">10 minutes — 1 activity</div>
+  </div>
+</section>
+
+<!-- 38 RESCUE MOVES -->
+<section class="slide" data-mod="Module 6 — Getting unstuck">
+  <div class="wrap">
+    <span class="tag">The tool</span>
+    <h2>Four rescue moves</h2>
+    <p class="lead">Typing "explain again, simpler" for the eighth time is not a strategy. Pick one of these instead.</p>
+    <div class="panel tight" style="border-left:5px solid var(--ultramarine)">
+      <h3 style="margin-top:0">Narrow — cut the question in half</h3>
+      <p class="small">Vague answers usually mean a question that was too big. "Explain the French Revolution" becomes "Explain why bread prices mattered in 1789."</p>
+    </div>
+    <div class="panel tight" style="border-left:5px solid var(--ultramarine)">
+      <h3 style="margin-top:0">Ground — give it something of yours</h3>
+      <p class="small">Paste your notes, your attempt, your textbook definition. "Here's how my teacher defined it. Explain the difference between that and what you just said."</p>
+    </div>
+    <div class="panel tight" style="border-left:5px solid var(--ultramarine)">
+      <h3 style="margin-top:0">Challenge — say precisely what's wrong</h3>
+      <p class="small">Not "that's not helpful" but "you used the word 'catalyst' three times and never defined it, and your example is from America. Redo it with a local example and no undefined words."</p>
+    </div>
+    <div class="panel tight" style="border-left:5px solid var(--ultramarine)">
+      <h3 style="margin-top:0">Restart — new chat, better roti</h3>
+      <p class="small">Once a conversation is full of bad answers, the AI keeps building on them. After three failed attempts, open a fresh chat. It's almost always faster than rescuing the old one.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 39 CHHOTA TEST -->
+<section class="slide" data-mod="Module 6 — Getting unstuck">
+  <div class="wrap">
+    <span class="tag">Keep this</span>
+    <h2>The chhota test</h2>
+    <p class="lead">Close the laptop. Explain what you just learned to a younger sibling — out loud, in 30 seconds, without scrolling back up.</p>
+    <div class="grid g3">
+      <div class="mini" style="border-top:5px solid var(--peacock)"><h4>You can do it</h4><p>It's yours. Move on, and write down the one line you'd use again.</p></div>
+      <div class="mini" style="border-top:5px solid var(--marigold-deep)"><h4>You stumble in one spot</h4><p>That spot is your real question. Go back and ask only about that. This is the most productive outcome.</p></div>
+      <div class="mini" style="border-top:5px solid var(--chilli)"><h4>You can't start</h4><p>You read, you didn't learn. It felt productive because the answer was well written. Restart with a narrower question.</p></div>
+    </div>
+    <div class="note">
+      <h4>Why this works</h4>
+      <p>Reading a clear explanation feels exactly like understanding it. The only way to tell the difference is to produce something from your own head. Thirty seconds of talking is the cheapest test there is.</p>
+    </div>
+    <p class="small">No younger sibling handy? Say it to the wall. It's less strange than getting a question wrong on Thursday.</p>
+  </div>
+</section>
+
+<!-- 40 ACTIVITY 6 -->
+<section class="slide wide" data-mod="Module 6 — Getting unstuck">
+  <div class="wrap">
+    <div class="act" data-act="rescue">
+      <header><h3>Activity 6 — Rescue the chat</h3><span class="mins">6 min</span></header>
+      <div class="actbody">
+        <p class="small" style="margin-bottom:16px">Three stuck conversations. Which move gets each one moving again?</p>
+
+        <div class="qcard" data-q="r1"><span class="qt">1. You asked "explain electromagnetic induction" and got a correct, well-written answer full of words you don't know. You've read it twice. Nothing landed.</span>
+          <div class="opts">
+            <button class="opt" data-v="Narrow" data-fb="Narrowing helps eventually, but the immediate problem is vocabulary, not scope — you don't yet know which part to narrow to.">Narrow — ask about a smaller piece</button>
+            <button class="opt" data-v="Ground" data-correct="1" data-fb="Yes. Paste your textbook's definition and ask it to map its words onto the ones you already know. Grounding it in your material turns a foreign explanation into a translation.">Ground — paste your textbook definition and ask it to bridge</button>
+            <button class="opt" data-v="Challenge" data-fb="Reasonable, and naming the unknown words would help. But giving it your own material works faster than criticising its output.">Challenge — tell it the answer was too advanced</button>
+            <button class="opt" data-v="Restart" data-fb="Too early. The answer wasn't wrong, it was pitched wrong — and you haven't given it anything to pitch to yet.">Restart — open a new chat</button>
+          </div><div class="fb"></div></div>
+
+        <div class="qcard" data-q="r2"><span class="qt">2. Fifteen messages in, on a history project. The AI has started repeating itself, is contradicting something it said earlier, and keeps drifting back to a point you already rejected.</span>
+          <div class="opts">
+            <button class="opt" data-v="Narrow" data-fb="Narrowing inside a polluted conversation still drags all the earlier confusion along with it.">Narrow — ask about one event only</button>
+            <button class="opt" data-v="Ground" data-fb="Useful in general, but the contradictions are already in the chat's memory and will keep resurfacing.">Ground — paste your notes again</button>
+            <button class="opt" data-v="Challenge" data-fb="Worth doing once. If it's already contradicting itself and looping, you're usually repairing something not worth repairing.">Challenge — point out the contradiction</button>
+            <button class="opt" data-v="Restart" data-correct="1" data-fb="Yes. Copy out the three useful things from the old chat, open a fresh one, and start with a proper ROTI prompt that includes them. Long messy chats get worse, not better.">Restart — new chat with the good bits carried over</button>
+          </div><div class="fb"></div></div>
+
+        <div class="qcard" data-q="r3"><span class="qt">3. You asked for help planning a survey for your school project. You got a generic answer about "ensuring a representative sample" that could apply to any project on earth.</span>
+          <div class="opts">
+            <button class="opt" data-v="Narrow" data-correct="1" data-fb="Yes. Generic in, generic out. Narrow it to the real thing: 'I can reach about 60 students in Classes 8 to 10 at one school in Hyderabad during lunch break. Given that, what can and cannot my survey claim?'">Narrow — replace the general question with your actual constraints</button>
+            <button class="opt" data-v="Ground" data-fb="Good instinct — and notice that naming your real limits IS grounding it. Here the sharper fix is narrowing the question to your exact situation.">Ground — paste the project brief</button>
+            <button class="opt" data-v="Challenge" data-fb="Saying 'that's too generic' often just produces a longer generic answer. Give it something specific to work with instead.">Challenge — tell it the answer was too generic</button>
+            <button class="opt" data-v="Restart" data-fb="Nothing is broken here. The question was just too wide to produce anything useful.">Restart — start again</button>
+          </div><div class="fb"></div></div>
+        <div class="stamp" data-stamp="rescue"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 41 M&E 6 -->
+<section class="slide" data-mod="Module 6 — Getting unstuck">
+  <div class="wrap">
+    <span class="tag">Module 6 check-in</span>
+    <h2>Quick check-in</h2>
+    <div class="me" data-me="m6"></div>
+  </div>
+</section>
+
+<!-- 42 DIVIDER CAPSTONE -->
+<section class="slide divider" data-mod="Capstone">
+  <div class="wrap">
+    <div class="num">7</div>
+    <h1>Twenty minutes, for real</h1>
+    <p>Everything so far was practice. This is the thing itself — you against the machine, then you and the machine together.</p>
+    <div class="kit">20 minutes — 2 parts</div>
+  </div>
+</section>
+
+<!-- 43 CAPSTONE BRIEF -->
+<section class="slide" data-mod="Capstone">
+  <div class="wrap">
+    <span class="tag">The brief</span>
+    <h2>What you're about to do</h2>
+    <div class="grid g2">
+      <div class="mini"><h4>Part A — You versus it</h4><p>Summarise a passage yourself. Then make the AI summarise the same passage. Then judge both, and say which one you'd defend.</p></div>
+      <div class="mini"><h4>Part B — Your question, sharpened</h4><p>Write your own research question first. Only then let the AI near it — to attack it, not to replace it.</p></div>
+    </div>
+    <div class="note warn">
+      <h4>One rule</h4>
+      <p>In both parts, <b>you go first</b>. Writing your own version before you see the AI's is the whole exercise. Once you've read a fluent answer, your own thinking quietly reshapes itself around it — and you won't notice it happening.</p>
+    </div>
+    <p class="small">Have a chatbot open in another tab. Start the timer on the next screen.</p>
+  </div>
+</section>
+
+<!-- 44 CAPSTONE A -->
+<section class="slide wide" data-mod="Capstone">
+  <div class="wrap">
+    <div class="act" data-act="capA">
+      <header><h3>Part A — Summarise, then compare</h3><span class="mins">10 min</span></header>
+      <div class="actbody">
+        <div class="timer" data-mins="10"><span class="tv">10:00</span><button>Start</button></div>
+        <div class="panel tight">
+          <h3 style="margin-top:0">The passage</h3>
+          <p class="small">A researcher studied 400 students aged 13 to 16 across four schools — two in a large city, two in a smaller town. Students recorded how they used their phones for two weeks. On average, students in the large city spent more total time on their phones, but students in the smaller town reported more nights of disrupted sleep. When the researcher looked closer, the gap was not explained by total screen time at all: it was explained by when the phone was used. Students who used phones in the hour before sleep reported worse sleep regardless of how many hours they used the phone overall. The researcher also noticed that students who described their phone use as "mostly for studying" spent almost the same amount of time on social apps as everyone else — they simply remembered it differently. The study could not show cause and effect, since students who already slept badly may have reached for their phones at night. The researcher recommended that schools stop focusing on total screen time and start asking about timing instead.</p>
+        </div>
+        <label class="fl" for="capA1">1. Your summary <span>— about 60 words, without looking anything up. Do this before you touch the chatbot.</span></label>
+        <textarea id="capA1" rows="4" data-store="capA_own"></textarea>
+        <label class="fl" for="capA2">2. The prompt you sent <span>— use ROTI. Paste the passage in as your Input layer.</span></label>
+        <textarea id="capA2" rows="3" data-store="capA_prompt"></textarea>
+        <label class="fl" for="capA3">3. What the AI's summary included that yours didn't</label>
+        <textarea id="capA3" rows="3" data-store="capA_ai_better"></textarea>
+        <label class="fl" for="capA4">4. What yours included that the AI's didn't — or got wrong</label>
+        <textarea id="capA4" rows="3" data-store="capA_you_better"></textarea>
+        <label class="fl" for="capA5">5. The passage contains one important limitation. Did both summaries keep it? Which one would you defend in front of your class, and why?</label>
+        <textarea id="capA5" rows="4" data-store="capA_judgement"></textarea>
+        <div class="note" style="margin-bottom:0">
+          <h4>Check yourself</h4>
+          <p>Most AI summaries of this passage drop the line about cause and effect, because it's a caution rather than a finding. If yours kept it and the AI's didn't, you just beat it at the part that matters most.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 45 CAPSTONE B -->
+<section class="slide wide" data-mod="Capstone">
+  <div class="wrap">
+    <div class="act" data-act="capB">
+      <header><h3>Part B — Sharpen your own question</h3><span class="mins">10 min</span></header>
+      <div class="actbody">
+        <div class="timer" data-mins="10"><span class="tv">10:00</span><button>Start</button></div>
+        <label class="fl" for="capB1">1. Your research question <span>— something you could actually investigate at your school or in your area. Write it yourself, now.</span></label>
+        <textarea id="capB1" rows="2" data-store="capB_q"></textarea>
+        <p class="small">Now send this, with your question pasted in:</p>
+        <div class="prompt">Here is my research question: [paste yours]
+
+I'm a school student and I can realistically survey or interview about 50 people in my own area over two weeks.
+
+Do not improve my question. Instead:
+1. Name three specific reasons this question might be hard for me to answer with the access I have.
+2. Tell me which words in my question are too vague to measure, and what would need defining.
+3. Ask me five questions that would force me to make it sharper.
+
+Then wait for my answers.<button class="copy" data-copy>Copy</button></div>
+        <label class="fl" for="capB2">2. The sharpest criticism it made — and whether you agree with it</label>
+        <textarea id="capB2" rows="3" data-store="capB_crit"></textarea>
+        <label class="fl" for="capB3">3. One thing it suggested that you're rejecting, and why <span>— you're allowed to disagree with it, and you should</span></label>
+        <textarea id="capB3" rows="3" data-store="capB_reject"></textarea>
+        <label class="fl" for="capB4">4. Your rewritten question, in your own words</label>
+        <textarea id="capB4" rows="2" data-store="capB_final"></textarea>
+        <label class="fl" for="capB5">5. What would you have to do next week to actually start this? Be specific — who, where, when.</label>
+        <textarea id="capB5" rows="3" data-store="capB_next"></textarea>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 46 RUBRIC -->
+<section class="slide" data-mod="Capstone">
+  <div class="wrap">
+    <span class="tag">Mark yourself honestly</span>
+    <h2>Did you drive?</h2>
+    <p class="lead">Read your own answers from the last two screens against this.</p>
+    <table>
+      <tr><th style="width:34%">Signal</th><th>You were driving if...</th></tr>
+      <tr><td><b>You went first</b></td><td>Your own summary and question were written before you opened the chatbot — not after a quick peek.</td></tr>
+      <tr><td><b>You disagreed</b></td><td>You rejected at least one thing the AI said and can explain why. If you accepted everything, it was driving.</td></tr>
+      <tr><td><b>You checked</b></td><td>You noticed at least one thing worth verifying — a number, a claim, a missing limitation.</td></tr>
+      <tr><td><b>You own the words</b></td><td>Your final question is phrased the way you'd say it out loud, not the way the AI phrased it.</td></tr>
+      <tr><td><b>You know what's next</b></td><td>You could start this on Monday without opening a chatbot again.</td></tr>
+    </table>
+    <div class="note good" style="margin-bottom:0">
+      <h4>If you scored badly</h4>
+      <p>That's more useful than scoring well. Pick the single row you failed hardest and make it the thing you deliberately do next time you open a chat.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 47 M&E 7 -->
+<section class="slide" data-mod="Capstone">
+  <div class="wrap">
+    <span class="tag">Capstone check-in</span>
+    <h2>Capstone reflection</h2>
+    <div class="me" data-me="m7"></div>
+  </div>
+</section>
+
+<!-- 48 DIARY -->
+<section class="slide" data-mod="After the workshop">
+  <div class="wrap">
+    <span class="tag">Take it home</span>
+    <h2>The sawaal diary</h2>
+    <p class="lead">Two entries a week, under 100 words each. Five minutes. This is where the habit actually forms.</p>
+    <div class="panel">
+      <h3 style="margin-top:0">One entry</h3>
+      <ol style="margin-bottom:0">
+        <li>What was I trying to get done, and what did "done well" look like?</li>
+        <li>What did I learn that I could explain to someone else tomorrow?</li>
+        <li>Which prompt worked best, and what exactly made it work?</li>
+        <li>What did the AI get wrong, or what did I have to check?</li>
+        <li>What will I do differently next time?</li>
+      </ol>
+    </div>
+    <div class="note">
+      <h4>Why question 4 is compulsory</h4>
+      <p>If you go three weeks without finding a single thing to check, you've stopped checking. Nobody uses AI for three weeks without hitting something wrong.</p>
+    </div>
+    <div class="btnrow"><button class="btn ghost" id="diaryCopy">Copy the diary template</button></div>
+    <p class="small">Paste it into your notes app, or keep a page at the back of a notebook.</p>
+  </div>
+</section>
+
+<!-- 49 CHARTER -->
+<section class="slide wide" data-mod="After the workshop">
+  <div class="wrap">
+    <div class="act" data-act="charter">
+      <header><h3>Your AI charter</h3><span class="mins">5 min</span></header>
+      <div class="actbody">
+        <p class="small">Five rules, in your own words. Not the ones you think sound good — the ones you'll actually keep. Tap a suggestion to use it, then edit it until it sounds like you.</p>
+        <div class="chips" data-fill="charter">
+          <button class="chip">I write my own first draft before I open a chat.</button>
+          <button class="chip">Nothing with my name, address or ID number goes in the box.</button>
+          <button class="chip">Every number and source gets checked before I submit it.</button>
+          <button class="chip">If I can't explain it in 30 seconds, I haven't learned it.</button>
+          <button class="chip">Three failed replies means a new chat, not a ninth try.</button>
+          <button class="chip">I ask my teacher what's allowed before the deadline, not after.</button>
+          <button class="chip">I disagree with it at least once per conversation.</button>
+          <button class="chip">Heavy things get told to a person, not just a chatbot.</button>
+        </div>
+        <label class="fl">Rule 1</label><input type="text" class="charter-in" data-store="charter1">
+        <label class="fl">Rule 2</label><input type="text" class="charter-in" data-store="charter2">
+        <label class="fl">Rule 3</label><input type="text" class="charter-in" data-store="charter3">
+        <label class="fl">Rule 4</label><input type="text" class="charter-in" data-store="charter4">
+        <label class="fl">Rule 5</label><input type="text" class="charter-in" data-store="charter5">
+        <div class="btnrow" style="margin-top:16px"><button class="btn alt" id="charterCopy">Copy my charter</button></div>
+        <p class="small">Send it to yourself. Read it the next time you're up at 1am with an assignment due.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 50 POST SURVEY -->
+<section class="slide" data-mod="After the workshop">
+  <div class="wrap">
+    <span class="tag">Last set of questions</span>
+    <h2>Where did you land?</h2>
+    <p class="lead">Same questions as the start, plus a few about the course itself. Answer as honestly as you did the first time.</p>
+    <div class="me" data-me="post"></div>
+  </div>
+</section>
+
+<!-- 51 EXPORT -->
+<section class="slide" data-mod="After the workshop">
+  <div class="wrap">
+    <span class="tag">Finish up</span>
+    <h2>Hand in your answers</h2>
+    <p class="lead">Everything you typed is still on this device and nowhere else. Save it out, then give the file to your teacher — or keep it for yourself.</p>
+    <div class="panel">
+      <h3 style="margin-top:0">What's in the file</h3>
+      <p class="small" id="exportSummary">Loading...</p>
+      <div class="btnrow">
+        <button class="btn alt" id="dlCsv">Download as spreadsheet</button>
+        <button class="btn ghost" id="dlJson">Download as data file</button>
+        <button class="btn ghost" id="showRaw">Show it as text</button>
+      </div>
+      <textarea id="rawBox" class="hide" rows="8" readonly></textarea>
+      <p class="small" style="margin-bottom:0">If the download doesn't work on your device, tap "Show it as text", select all, and paste it wherever your teacher asked.</p>
+    </div>
+    <div class="note">
+      <h4>For whoever is collecting these</h4>
+      <p>The spreadsheet has one row per answer, with the module, the question, what was answered, and a timestamp. Activity scores are included automatically.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 52 CLOSE -->
+<section class="slide divider" data-mod="Done">
+  <div class="wrap">
+    <div class="num">✓</div>
+    <h1>You're the driver now</h1>
+    <p>Six things to keep: ROTI for prompts. The ladder for depth. The tutor flip for learning. The DNA test for truth. Green-amber-red for safety. The chhota test for honesty.</p>
+    <div class="kit">
+      <p style="color:#B9C6D6;margin-bottom:8px">The one line worth remembering out of all of it:</p>
+      <p style="color:#fff;font-size:20px;font-family:var(--disp);font-weight:700;margin:0">If the thinking didn't happen in your head, it didn't happen.</p>
+    </div>
+  </div>
+</section>
+</template>
+<script>
+(function(){
+"use strict";
+
+/* ============ STATE ============ */
+var STATE={pid:"",started:new Date().toISOString(),answers:{}};
+var SCORES={};
+function rec(id,mod,q,a,correct){
+  STATE.answers[id]={mod:mod||"",q:q||"",a:a,correct:(correct===undefined?"":correct),t:new Date().toISOString()};
+  if(window.Sync)Sync.queueAnswer({id:id,mod:mod,q:q,a:a,correct:correct,t:STATE.answers[id].t});
+  updateExportSummary();
+}
+function modOf(el){var s=el.closest(".slide");return s&&s.dataset.mod?s.dataset.mod:"";}
+
+/* ============ M&E BANKS ============ */
+var L5=["Not at all","Completely"];
+var BANKS={
+ base:{title:"Six quick questions",sub:"Tap a number from 1 (not at all) to 5 (completely).",items:[
+  {id:"b1",type:"likert",construct:"declarative",q:"I know how to make a chatbot give me an answer that fits my class and syllabus."},
+  {id:"b2",type:"likert",construct:"planning",q:"Before I open a chatbot, I usually know exactly what I want out of it."},
+  {id:"b3",type:"likert",construct:"monitoring",q:"I can usually tell when an AI answer might be wrong."},
+  {id:"b4",type:"choice",construct:"debugging",q:"When an AI answer doesn't help you, what do you usually do?",opts:["Send the same thing again","Add more detail and ask again","Give up and search elsewhere","Change my whole approach","I don't really use AI"]},
+  {id:"b5",type:"choice",construct:"usage",q:"In a normal week, how often do you use AI for schoolwork?",opts:["Never","Once or twice","Most days","Every day"]},
+  {id:"b6",type:"text",construct:"goal",q:"What's the one thing you most want to be able to do with AI by the end of this hour?"}
+ ]},
+ m1:{title:"Module 1",sub:"Three questions. Honest answers are more useful than flattering ones.",items:[
+  {id:"m1a",type:"likert",construct:"conditional",q:"I can tell the difference between using AI as a passenger and using it as a driver."},
+  {id:"m1b",type:"choice",construct:"self-appraisal",q:"Thinking about the last month honestly, which were you most of the time?",opts:["Passenger","Co-pilot","Driver","I haven't used AI much"]},
+  {id:"m1c",type:"text",construct:"planning",q:"Name one specific thing you'll do differently in your next chat."}
+ ]},
+ m2:{title:"Module 2",sub:"About the prompt you just built.",items:[
+  {id:"m2a",type:"likert",construct:"procedural",q:"I can turn a weak prompt into a strong one without help."},
+  {id:"m2b",type:"choice",construct:"procedural",q:"Which ROTI layer was hardest to fill in?",opts:["R — role and reader","O — outcome","T — tight rules","I — input","None, all easy"]},
+  {id:"m2c",type:"choice",construct:"evaluation",q:"When you ran your full prompt, how different was the answer from what a one-line prompt gives you?",opts:["Much more useful","A bit better","About the same","Worse","Didn't run it yet"]},
+  {id:"m2d",type:"text",construct:"evaluation",q:"What exactly changed in the answer? Be specific."}
+ ]},
+ m3:{title:"Module 3",sub:"About the ladder you built.",items:[
+  {id:"m3a",type:"likert",construct:"planning",q:"I can break a big question into a sequence of smaller ones."},
+  {id:"m3b",type:"choice",construct:"info-management",q:"Which rung gave you the most useful answer?",opts:["1 Map","2 Pick","3 Ground","4 Test","5 Gap","Didn't run them"]},
+  {id:"m3c",type:"text",construct:"evaluation",q:"What did the last rung reveal that you hadn't thought about?"}
+ ]},
+ m4:{title:"Module 4",sub:"About checking what AI tells you.",items:[
+  {id:"m4a",type:"likert",construct:"monitoring",q:"I can spot which parts of an AI answer need checking before I use them."},
+  {id:"m4b",type:"choice",construct:"prior-behaviour",q:"Before today, how often did you check an AI claim against another source?",opts:["Never","Once or twice","Sometimes","Almost always"]},
+  {id:"m4c",type:"choice",construct:"evaluation",q:"Which trap in the hunt caught you out most?",opts:["The invented law","The fake study","The lakh and crore error","The fake link","None of them"]},
+  {id:"m4d",type:"text",construct:"monitoring",q:"Write down one thing you've used from AI in the past without checking it."}
+ ]},
+ m5:{title:"Module 5",sub:"About safety and fairness.",items:[
+  {id:"m5a",type:"likert",construct:"declarative",q:"I know what should never be typed into a chatbot."},
+  {id:"m5b",type:"likert",construct:"conditional",q:"I know where the line sits between AI helping me and AI doing my work for me."},
+  {id:"m5c",type:"choice",construct:"disagreement",q:"Did you disagree with any of our green, amber or red answers?",opts:["No, all fair","Yes, one of them","Yes, more than one"]},
+  {id:"m5d",type:"text",construct:"reasoning",q:"Which scenario made you think hardest, and why?"}
+ ]},
+ m6:{title:"Module 6",sub:"About getting unstuck.",items:[
+  {id:"m6a",type:"likert",construct:"debugging",q:"When a chat goes nowhere, I know how to change strategy instead of repeating myself."},
+  {id:"m6b",type:"choice",construct:"monitoring",q:"How often do you test yourself after AI explains something?",opts:["Never","Sometimes","Usually","Every time"]},
+  {id:"m6c",type:"text",construct:"debugging",q:"Describe a chat that went in circles on you. What would you do differently now?"}
+ ]},
+ m7:{title:"Capstone",sub:"About the twenty minutes you just spent.",items:[
+  {id:"m7a",type:"choice",construct:"integrity",q:"Did you really write your own version before looking at the AI's?",opts:["Yes, fully","Mostly","No, I peeked first","No, I skipped it"]},
+  {id:"m7b",type:"likert",construct:"evaluation",q:"I can judge an AI's output against my own work and say which is better."},
+  {id:"m7c",type:"choice",construct:"evaluation",q:"Whose summary was better?",opts:["Mine","The AI's","Mine for accuracy, the AI's for writing","Hard to say"]},
+  {id:"m7d",type:"text",construct:"evaluation",q:"What did the AI miss, drop or get wrong?"}
+ ]},
+ post:{title:"Final questions",sub:"The first four are the same ones we asked at the start.",items:[
+  {id:"p1",type:"likert",construct:"declarative",q:"I know how to make a chatbot give me an answer that fits my class and syllabus."},
+  {id:"p2",type:"likert",construct:"planning",q:"Before I open a chatbot, I usually know exactly what I want out of it."},
+  {id:"p3",type:"likert",construct:"monitoring",q:"I can usually tell when an AI answer might be wrong."},
+  {id:"p4",type:"choice",construct:"debugging",q:"When an AI answer doesn't help you, what will you do now?",opts:["Send the same thing again","Add more detail and ask again","Give up and search elsewhere","Change my whole approach","I don't really use AI"]},
+  {id:"p5",type:"likert",construct:"intention",q:"I will actually use at least one of these tools next week."},
+  {id:"p6",type:"choice",construct:"course-feedback",q:"Which part was most useful?",opts:["ROTI prompts","The ladder","The hallucination hunt","Green, amber, red","Rescue moves","The capstone"]},
+  {id:"p7",type:"text",construct:"course-feedback",q:"What was confusing, boring or missing?"},
+  {id:"p8",type:"text",construct:"intention",q:"One thing you're going to stop doing with AI."}
+ ]}
+};
+
+/* ============ BUILD DECK ============ */
+var deck=document.getElementById("deck");
+var tpl=document.getElementById("slides");
+deck.appendChild(tpl.content.cloneNode(true));
+tpl.remove();
+var slides=Array.prototype.slice.call(deck.querySelectorAll(".slide"));
+var cur=0;
+
+/* render M&E blocks */
+slides.forEach(function(sl){
+  var host=sl.querySelector(".me");
+  if(!host)return;
+  var bank=BANKS[host.dataset.me];if(!bank)return;
+  var mod=sl.dataset.mod||"";
+  var html='<h3>'+bank.title+'</h3><p class="sub">'+bank.sub+'</p>';
+  bank.items.forEach(function(it){
+    html+='<div class="meq" data-item="'+it.id+'"><span class="qt">'+it.q+'</span>';
+    if(it.type==="likert"){
+      html+='<div class="likert">';
+      for(var n=1;n<=5;n++)html+='<button type="button" data-val="'+n+'">'+n+'</button>';
+      html+='</div><div class="lends"><span>'+L5[0]+'</span><span>'+L5[1]+'</span></div>';
+    }else if(it.type==="choice"){
+      html+='<div class="opts" style="margin-top:7px">';
+      it.opts.forEach(function(o){html+='<button type="button" class="opt" data-val="'+o.replace(/"/g,"&quot;")+'">'+o+'</button>';});
+      html+='</div>';
+    }else{
+      html+='<textarea rows="3" data-val="text" style="margin-top:7px"></textarea>';
+    }
+    html+='</div>';
+  });
+  html+='<p class="saved">Saved. Your answers go with you to the end.</p>';
+  host.innerHTML=html;
+
+  host.addEventListener("click",function(e){
+    var b=e.target.closest("button[data-val]");if(!b)return;
+    var box=b.closest(".meq"),id=box.dataset.item;
+    var item=bank.items.filter(function(x){return x.id===id;})[0];
+    Array.prototype.forEach.call(box.querySelectorAll("button[data-val]"),function(o){o.classList.remove("on");o.classList.remove("picked");});
+    b.classList.add(b.parentNode.classList.contains("likert")?"on":"picked");
+    rec(id,mod,item.q,b.dataset.val);
+    host.querySelector(".saved").classList.add("on");
+  });
+  host.addEventListener("input",function(e){
+    if(e.target.tagName!=="TEXTAREA")return;
+    var box=e.target.closest(".meq"),id=box.dataset.item;
+    var item=bank.items.filter(function(x){return x.id===id;})[0];
+    rec(id,mod,item.q,e.target.value);
+    host.querySelector(".saved").classList.add("on");
+  });
+});
+
+/* ============ NAV ============ */
+var rail=document.getElementById("rail"),pos=document.getElementById("pos"),
+    modLabel=document.getElementById("modLabel"),nextBtn=document.getElementById("next"),
+    prevBtn=document.getElementById("prev");
+function show(i){
+  i=Math.max(0,Math.min(slides.length-1,i));
+  slides[cur].classList.remove("on");
+  cur=i;slides[cur].classList.add("on");
+  deck.scrollTop=0;
+  rail.style.width=((cur+1)/slides.length*100)+"%";
+  pos.textContent=(cur+1)+"/"+slides.length;
+  modLabel.textContent=slides[cur].dataset.mod||"";
+  prevBtn.style.visibility=cur===0?"hidden":"visible";
+  nextBtn.textContent=cur===0?"Start":(cur===slides.length-1?"Done":"Next");
+  nextBtn.disabled=cur===slides.length-1;
+  if(window.Sync)Sync.updateProgress(cur);
+  if(cur===slides.length-1&&window.Sync)Sync.markComplete();
+}
+nextBtn.addEventListener("click",function(){show(cur+1);});
+prevBtn.addEventListener("click",function(){show(cur-1);});
+document.addEventListener("keydown",function(e){
+  var t=e.target.tagName;
+  if(t==="TEXTAREA"||t==="INPUT"||t==="SELECT")return;
+  if(e.key==="ArrowRight")show(cur+1);
+  if(e.key==="ArrowLeft")show(cur-1);
+});
+var tx=0,ty=0;
+deck.addEventListener("touchstart",function(e){tx=e.changedTouches[0].clientX;ty=e.changedTouches[0].clientY;},{passive:true});
+deck.addEventListener("touchend",function(e){
+  var dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;
+  if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.8){show(cur+(dx<0?1:-1));}
+},{passive:true});
+
+/* TOC */
+var toc=document.getElementById("toc"),tocList=document.getElementById("tocList");
+slides.forEach(function(sl,i){
+  var h=sl.querySelector("h1,h2");
+  var a=sl.querySelector(".act>header h3");
+  var t=a?a.textContent:(h?h.textContent:"Slide "+(i+1));
+  var b=document.createElement("button");
+  b.className="tocItem";
+  b.innerHTML=(i+1)+". "+t+"<span>"+(sl.dataset.mod||"")+"</span>";
+  b.addEventListener("click",function(){toc.classList.remove("on");show(i);});
+  tocList.appendChild(b);
+});
+document.getElementById("menuBtn").addEventListener("click",function(){toc.classList.add("on");});
+document.getElementById("tocClose").addEventListener("click",function(){toc.classList.remove("on");});
+
+/* ============ PARTICIPANT CODE ============ */
+var pid=document.getElementById("pid");
+pid.addEventListener("input",function(){STATE.pid=pid.value.trim();updateExportSummary();});
+
+/* ============ CHOICE ACTIVITIES ============ */
+document.addEventListener("click",function(e){
+  var opt=e.target.closest(".act .opts .opt");if(!opt)return;
+  var card=opt.closest(".qcard");if(!card)return;
+  var act=opt.closest(".act").dataset.act;
+  var opts=card.querySelectorAll(".opt");
+  if(card.dataset.done)return;
+  card.dataset.done="1";
+  var correct=opt.hasAttribute("data-correct");
+  Array.prototype.forEach.call(opts,function(o){
+    o.disabled=true;
+    if(o===opt)o.classList.add("picked",correct?"right":"wrong");
+    else if(o.hasAttribute("data-correct"))o.classList.add("right");
+    else o.classList.add("dim");
+  });
+  var fb=card.querySelector(".fb");
+  fb.className="fb on "+(correct?"ok":"no");
+  fb.innerHTML="<b>"+(correct?"Yes.":"Have another look.")+"</b>"+(opt.dataset.fb||"");
+  if(!SCORES[act])SCORES[act]={right:0,total:0};
+  SCORES[act].right+=correct?1:0;SCORES[act].total+=1;
+  rec(act+"_"+card.dataset.q,modOf(opt),card.querySelector(".qt").textContent.slice(0,140),opt.dataset.v,correct?1:0);
+  var all=opt.closest(".actbody").querySelectorAll(".qcard").length;
+  var done=opt.closest(".actbody").querySelectorAll(".qcard[data-done]").length;
+  if(done===all){
+    var st=opt.closest(".actbody").querySelector(".stamp[data-stamp]");
+    if(st){
+      var s=SCORES[act];
+      st.textContent=s.right+" of "+s.total+" — "+(s.right===s.total?"clean sweep":(s.right>=s.total*0.6?"solid":"worth a second read"));
+      st.classList.add("on");
+      if(s.right<s.total*0.6)st.style.borderColor=st.style.color="#E23A2E";
+      rec(act+"_score","Activity score","Score on "+act,s.right+"/"+s.total,s.right);
+    }
+  }
+});
+
+/* ============ ROTI BUILDER ============ */
+var R={r:document.getElementById("r_r"),o:document.getElementById("r_o"),t:document.getElementById("r_t"),i:document.getElementById("r_i")};
+var rOut=document.getElementById("r_out"),rMeter=document.getElementById("r_meter"),
+    rLabel=document.getElementById("r_label"),rTip=document.getElementById("r_tip");
+var ROTI_EX={
+ exam:{r:"You are a strict Federal Board examiner. I'm in Class 10 and I keep losing marks on long questions in Chemistry, even when I know the topic.",
+  o:"Give me three board-style long questions on chemical equilibrium, plus the marking scheme for each. Under 200 words in total.",
+  t:"Do not give me model answers. Wait until I send mine, then mark them and tell me exactly where the marks were lost.",
+  i:"My notes on equilibrium: [paste them here]. In my last test I got 12 out of 25, and I lost most marks on explanations rather than calculations."},
+ project:{r:"You are a science fair judge who asks difficult questions. I'm in Class 9 and this is my first project.",
+  o:"Give me five questions a judge would ask about my method, ordered from easiest to hardest. No answers.",
+  t:"Don't redesign my project and don't suggest a new topic. Use plain English and keep each question under 25 words.",
+  i:"My project: I measured dust on window sills at three houses on my street in Rawalpindi over two weeks, using a weighing scale and a fixed square of card."},
+ urdu:{r:"You are an Urdu literature teacher. I'm in Class 11 and I can read Urdu well but I struggle to write analysis in English.",
+  o:"Take the nazm I paste below and give me four analysis points I could build an essay around, as short bullet points only.",
+  t:"Do not translate the whole poem and do not write my essay. Flag any line where you are unsure of the meaning instead of guessing.",
+  i:"The nazm: [paste it here]. My teacher said my last essay only described the poem instead of arguing about it."}
+};
+function rotiUpdate(){
+  var r=R.r.value.trim(),o=R.o.value.trim(),t=R.t.value.trim(),i=R.i.value.trim();
+  var parts=[];
+  if(r)parts.push(r);
+  if(o)parts.push(o);
+  if(t)parts.push(t);
+  if(i)parts.push(i);
+  var text=parts.join("\n\n");
+  rOut.textContent=text||"Your prompt will appear here as you type.";
+  var btn=document.createElement("button");btn.className="copy";btn.setAttribute("data-copy","");btn.textContent="Copy";
+  rOut.appendChild(btn);
+  var filled=[r,o,t,i].filter(function(x){return x.length>12;}).length;
+  var words=text.split(/\s+/).filter(Boolean).length;
+  var score=filled*20;
+  if(words>35)score+=10;
+  if(/\b(class|board|grade|matric|fsc|cbse|icse|o level|a level)\b/i.test(text))score+=5;
+  if(/(don't|do not|only|maximum|under \d|no more than|wait)/i.test(text))score+=5;
+  score=Math.min(100,score);
+  rMeter.style.width=score+"%";
+  rMeter.style.background=score<40?"#E23A2E":(score<70?"#FFB703":"#0F7B6C");
+  rLabel.textContent=score===0?"Empty":(score<40?"Thin":(score<70?"Getting there":(score<90?"Strong":"Excellent")));
+  var tips=[];
+  if(!r||r.length<13)tips.push("add who the AI should be and what class you're in");
+  if(!o||o.length<13)tips.push("say exactly what you want back, and how much of it");
+  if(!t||t.length<13)tips.push("add one thing it must not do");
+  if(!i||i.length<13)tips.push("paste your own notes, draft or local detail — this layer changes the most");
+  rTip.textContent=tips.length?("Next: "+tips[0]+"."):"All four layers filled. Run it, then change one word and run it again to see what that word was doing.";
+  if(text)rec("roti_prompt","Module 2 — Better prompts","Prompt built in Activity 2",text,score);
+}
+function grow(el){el.style.height="auto";el.style.height=Math.max(62,el.scrollHeight+2)+"px";}
+Object.keys(R).forEach(function(k){R[k].addEventListener("input",function(){grow(R[k]);rotiUpdate();});});
+document.querySelector('[data-fill="roti"]').addEventListener("click",function(e){
+  var c=e.target.closest(".chip");if(!c)return;
+  var ex=c.dataset.ex;
+  if(ex==="clear"){R.r.value=R.o.value=R.t.value=R.i.value="";}
+  else{var d=ROTI_EX[ex];R.r.value=d.r;R.o.value=d.o;R.t.value=d.t;R.i.value=d.i;}
+  Object.keys(R).forEach(function(k){grow(R[k]);});
+  rotiUpdate();
+});
+rotiUpdate();
+
+/* ============ LADDER ============ */
+var ladTopic=document.getElementById("lad_topic"),ladOwn=document.getElementById("lad_own");
+ladTopic.addEventListener("change",function(){
+  ladOwn.classList.toggle("hide",ladTopic.value!=="__own");
+});
+function topicText(){return ladTopic.value==="__own"?(ladOwn.value||"my topic"):(ladTopic.value||"my topic");}
+document.getElementById("lad_build").addEventListener("click",function(){
+  var T=topicText();
+  document.getElementById("lad1").value="List the main causes or factors behind: "+T+". List only — maximum eight items, no explanations.";
+  document.getElementById("lad2").value="Take item [number] from that list. Explain it in about 100 words at Class 10 level, with no jargon.";
+  document.getElementById("lad3").value="Give me one real, documented example of that from Pakistan or India in the last five years. Say how confident you are in each fact, and list exactly which ones I should verify myself.";
+  document.getElementById("lad4").value="Ask me three questions that would show whether I understand this well enough to explain it to my class. Do not give me the answers.";
+  document.getElementById("lad5").value="Based on this whole conversation, what is the most important thing about "+T+" that we have not discussed, and why would leaving it out weaken my project?";
+  rec("ladder_topic","Module 3 — The ladder","Ladder topic chosen",T);
+});
+document.getElementById("lad_copy").addEventListener("click",function(e){
+  var out=[1,2,3,4,5].map(function(n){return "Rung "+n+": "+document.getElementById("lad"+n).value;}).join("\n\n");
+  copyText(out,e.target);
+  rec("ladder_prompts","Module 3 — The ladder","Ladder prompts written",out);
+});
+
+/* ============ HALLUCINATION HUNT ============ */
+var huntDoc=document.getElementById("huntdoc"),huntFb=document.getElementById("hunt_fb");
+huntDoc.addEventListener("click",function(e){
+  var s=e.target.closest(".sus");if(!s||huntDoc.dataset.done)return;
+  s.classList.toggle("flag");
+  s.style.background=s.classList.contains("flag")?"#FFE9A8":"";
+});
+document.getElementById("hunt_check").addEventListener("click",function(){
+  if(huntDoc.dataset.done)return;
+  huntDoc.dataset.done="1";
+  var spans=huntDoc.querySelectorAll(".sus"),hits=0,bad=0,falseAlarm=0,html="";
+  Array.prototype.forEach.call(spans,function(s,n){
+    var isBad=s.dataset.v==="bad",flagged=s.classList.contains("flag");
+    s.style.background="";
+    if(isBad){bad++;if(flagged){hits++;s.classList.add("hit");}else{s.classList.add("shown");}}
+    else if(flagged){falseAlarm++;s.classList.add("miss");}
+    var verdict=isBad?(flagged?"You caught it. ":"Missed — this one is made up. "):(s.dataset.v==="soft"?(flagged?"Good instinct. ":"Worth flagging too — "):(flagged?"This one was actually fine. ":"Correctly left alone. "));
+    html+='<div class="'+(isBad?"bad":"fine")+'"><b>'+(n+1)+'. </b>'+verdict+s.dataset.note+'</div>';
+  });
+  huntFb.innerHTML=html;
+  var st=document.querySelector('.stamp[data-stamp="hunt"]');
+  st.textContent=hits+" of "+bad+" fakes caught"+(falseAlarm?", "+falseAlarm+" false alarm"+(falseAlarm>1?"s":""):"");
+  st.classList.add("on");
+  if(hits<3){st.style.borderColor=st.style.color="#E23A2E";}
+  rec("hunt_score","Module 4 — Checking AI","Fakes caught in the hallucination hunt",hits+"/"+bad+" (false alarms: "+falseAlarm+")",hits);
+});
+document.getElementById("hunt_reset").addEventListener("click",function(){
+  delete huntDoc.dataset.done;huntFb.innerHTML="";
+  var st=document.querySelector('.stamp[data-stamp="hunt"]');st.classList.remove("on");st.style.borderColor=st.style.color="";
+  Array.prototype.forEach.call(huntDoc.querySelectorAll(".sus"),function(s){s.className="sus";s.style.background="";});
+});
+
+/* ============ TIMERS ============ */
+Array.prototype.forEach.call(document.querySelectorAll(".timer"),function(t){
+  var total=parseInt(t.dataset.mins,10)*60,left=total,id=null;
+  var view=t.querySelector(".tv"),btn=t.querySelector("button");
+  function paint(){
+    var m=Math.floor(left/60),s=left%60;
+    view.textContent=m+":"+(s<10?"0":"")+s;
+  }
+  btn.addEventListener("click",function(){
+    if(id){clearInterval(id);id=null;btn.textContent="Resume";return;}
+    btn.textContent="Pause";t.classList.remove("done");
+    id=setInterval(function(){
+      left--;paint();
+      if(left<=0){clearInterval(id);id=null;t.classList.add("done");view.textContent="Time";btn.textContent="Reset";left=total;}
+    },1000);
+  });
+  paint();
+});
+
+/* ============ COPY ============ */
+function copyText(txt,btn){
+  function done(){
+    if(!btn)return;var old=btn.textContent;btn.textContent="Copied";btn.classList.add("done");
+    setTimeout(function(){btn.textContent=old;btn.classList.remove("done");},1600);
+  }
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(done,function(){fallback(txt);done();});
+  }else{fallback(txt);done();}
+}
+function fallback(txt){
+  var ta=document.createElement("textarea");ta.value=txt;ta.style.position="fixed";ta.style.opacity="0";
+  document.body.appendChild(ta);ta.select();try{document.execCommand("copy");}catch(err){}document.body.removeChild(ta);
+}
+document.addEventListener("click",function(e){
+  var b=e.target.closest("[data-copy]");if(!b)return;
+  var box=b.parentNode.cloneNode(true);
+  var inner=box.querySelector("[data-copy]");if(inner)inner.remove();
+  copyText(box.textContent.trim(),b);
+});
+
+/* ============ CHARTER + DIARY ============ */
+document.querySelector('[data-fill="charter"]').addEventListener("click",function(e){
+  var c=e.target.closest(".chip");if(!c)return;
+  var inputs=document.querySelectorAll(".charter-in");
+  for(var i=0;i<inputs.length;i++){if(!inputs[i].value.trim()){inputs[i].value=c.textContent;inputs[i].dispatchEvent(new Event("input",{bubbles:true}));inputs[i].focus();return;}}
+});
+document.getElementById("charterCopy").addEventListener("click",function(e){
+  var out="My AI charter\n\n"+Array.prototype.map.call(document.querySelectorAll(".charter-in"),function(x,n){return (n+1)+". "+x.value;}).filter(function(l){return l.length>3;}).join("\n");
+  copyText(out,e.target);
+});
+document.getElementById("diaryCopy").addEventListener("click",function(e){
+  copyText("SAWAAL DIARY — week of ______\n\nEntry 1\n1. What was I trying to get done?\n2. What did I learn that I could explain tomorrow?\n3. Which prompt worked best, and why?\n4. What did the AI get wrong, or what did I check?\n5. What will I do differently next time?\n\nEntry 2\n1.\n2.\n3.\n4.\n5.",e.target);
+});
+
+/* ============ FREE TEXT STORE ============ */
+document.addEventListener("input",function(e){
+  var el=e.target;if(!el.dataset||!el.dataset.store)return;
+  var lab=el.closest(".actbody")?el.closest(".actbody").querySelector('label[for="'+el.id+'"]'):null;
+  rec(el.dataset.store,modOf(el),lab?lab.textContent.trim().slice(0,140):el.dataset.store,el.value);
+});
+
+/* ============ EXPORT ============ */
+function rows(){
+  var out=[["participant_code","item_id","module","question","answer","correct","timestamp"]];
+  Object.keys(STATE.answers).forEach(function(k){
+    var a=STATE.answers[k];
+    out.push([STATE.pid||"(no code)",k,a.mod,a.q,String(a.a==null?"":a.a),String(a.correct),a.t]);
+  });
+  return out;
+}
+function csv(){
+  return rows().map(function(r){
+    return r.map(function(c){return '"'+String(c).replace(/"/g,'""').replace(/\r?\n/g," / ")+'"';}).join(",");
+  }).join("\n");
+}
+function updateExportSummary(){
+  var el=document.getElementById("exportSummary");if(!el)return;
+  var n=Object.keys(STATE.answers).length;
+  el.textContent=(STATE.pid?"Code name "+STATE.pid+". ":"No code name set — go back to the second screen if your teacher needs one. ")+n+" answers recorded, including every check-in, your prompts, your capstone writing and your activity scores.";
+}
+function download(name,text,type){
+  try{
+    var blob=new Blob([text],{type:type});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();
+    setTimeout(function(){URL.revokeObjectURL(url);a.remove();},500);
+  }catch(err){showRaw();}
+}
+function showRaw(){
+  var box=document.getElementById("rawBox");
+  box.value=csv();box.classList.remove("hide");box.select();
+}
+document.getElementById("dlCsv").addEventListener("click",function(){
+  download("sawaal-"+(STATE.pid||"anon")+".csv","\ufeff"+csv(),"text/csv;charset=utf-8");
+});
+document.getElementById("dlJson").addEventListener("click",function(){
+  download("sawaal-"+(STATE.pid||"anon")+".json",JSON.stringify(STATE,null,2),"application/json");
+});
+document.getElementById("showRaw").addEventListener("click",showRaw);
+
+/* ============ GO ============ */
+slides[0].classList.add("on");
+/* ============ account / resume ============ */
+(function(){
+  var saveBtn=document.getElementById("acctSaveBtn");
+  var skipBtn=document.getElementById("acctSkipBtn");
+  var status=document.getElementById("acctStatus");
+  if(!saveBtn)return;
+  if(skipBtn)skipBtn.addEventListener("click",function(){show(cur+1);});
+  saveBtn.addEventListener("click",async function(){
+    var name=document.getElementById("acctName").value.trim();
+    var school=document.getElementById("acctSchool").value.trim();
+    var klass=document.getElementById("acctClass").value.trim();
+    var pin=document.getElementById("acctPin").value.trim();
+    if(!name||!school||!klass||pin.length!==4){status.textContent="Fill in all four fields — PIN must be 4 digits.";return;}
+    status.textContent="Saving...";
+    var res=await Sync.loginOrResume(name,school,klass,pin);
+    if(!res.ok){status.textContent=res.error;return;}
+    STATE.pid=res.code;
+    var pidField=document.getElementById("pid");if(pidField)pidField.value=res.code;
+    status.textContent=res.resumed?"Welcome back — resuming your progress.":"Saved. You can close this tab and come back any time with the same name/school/class + PIN.";
+    if(res.resumed&&res.current_screen>0)show(res.current_screen);
+  });
+  // If this device already has a session (didn't clear storage), offer to jump back in.
+  var local=Sync.restoreLocal&&Sync.restoreLocal();
+  if(local&&local.sessionId){
+    status.textContent="Found saved progress on this device. Enter the same details + PIN above to resume, or just continue below to start fresh.";
+  }
+})();
+
+window.addEventListener("sb-saved",function(){
+  var tag=document.getElementById("savedTag");
+  if(!tag)return;
+  tag.classList.add("show");
+  clearTimeout(tag._t);
+  tag._t=setTimeout(function(){tag.classList.remove("show");},1500);
+});
+
+show(0);
+updateExportSummary();
+window.addEventListener("beforeunload",function(e){
+  if(Object.keys(STATE.answers).length>3){e.preventDefault();e.returnValue="";}
+});
+})();
+</script>
+</body>
+</html>

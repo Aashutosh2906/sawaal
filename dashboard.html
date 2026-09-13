@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sawaal Better — Facilitator Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+body{font-family:system-ui,sans-serif;max-width:1000px;margin:40px auto;padding:0 20px;color:#171412}
+table{border-collapse:collapse;width:100%;margin-top:20px}
+th,td{border:1px solid #ddd;padding:8px 10px;text-align:left;font-size:14px}
+th{background:#f4f1ea}
+button{background:#FFB703;border:0;border-radius:8px;padding:10px 16px;font-weight:600;cursor:pointer;margin-right:8px}
+#gate{max-width:360px}
+input{width:100%;padding:10px;margin:6px 0;box-sizing:border-box}
+.pill{padding:2px 8px;border-radius:10px;font-size:12px}
+.done{background:#E8F5F1;color:#0F7B6C}
+.progress{background:#FFF4DC;color:#E08A00}
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <h2>Facilitator access</h2>
+  <p>Enter the passcode you set when you deployed this (see README). This is a basic gate, not real security — don't put anything you wouldn't want a determined student to see.</p>
+  <input type="password" id="passcode" placeholder="Passcode">
+  <button onclick="checkGate()">Enter</button>
+</div>
+
+<div id="app" style="display:none">
+  <h1>Sawaal Better — class report</h1>
+  <div>
+    <button onclick="load()">Refresh</button>
+    <button onclick="exportCsv()">Export all answers as CSV</button>
+  </div>
+  <table id="roster">
+    <thead><tr><th>Name</th><th>School</th><th>Class</th><th>Code</th><th>Status</th><th>Screen</th><th>Started</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<script>
+// Fill these in — same project as supabase-client.js. Facilitator passcode is
+// just a client-side gate for convenience, not a real access-control layer.
+const SUPABASE_URL = "https://YOUR-PROJECT.supabase.co";
+const SUPABASE_ANON_KEY = "YOUR-ANON-KEY";
+const FACILITATOR_PASSCODE = "changeme";
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+function checkGate(){
+  if(document.getElementById("passcode").value===FACILITATOR_PASSCODE){
+    document.getElementById("gate").style.display="none";
+    document.getElementById("app").style.display="block";
+    load();
+  } else {
+    alert("Wrong passcode.");
+  }
+}
+
+let lastRows=[];
+
+async function load(){
+  const { data: students, error: e1 } = await sb.from("students").select("*");
+  const { data: sessions, error: e2 } = await sb.from("sessions").select("*");
+  if(e1||e2){ alert("Couldn't load data: "+((e1||e2).message)); return; }
+  const tbody = document.querySelector("#roster tbody");
+  tbody.innerHTML = "";
+  lastRows = [];
+  students.forEach(s=>{
+    const sess = sessions.filter(x=>x.student_id===s.id).sort((a,b)=>new Date(b.started_at)-new Date(a.started_at))[0];
+    if(!sess) return;
+    const status = sess.completed_at ? '<span class="pill done">Complete</span>' : '<span class="pill progress">In progress</span>';
+    tbody.innerHTML += `<tr><td>${s.name}</td><td>${s.school}</td><td>${s.class}</td><td>${s.code}</td><td>${status}</td><td>${sess.current_screen}</td><td>${new Date(sess.started_at).toLocaleString()}</td></tr>`;
+    lastRows.push({student:s, session:sess});
+  });
+}
+
+async function exportCsv(){
+  const { data: answers, error } = await sb.from("answers").select("*, sessions(student_id)");
+  if(error){ alert("Export failed: "+error.message); return; }
+  const { data: students } = await sb.from("students").select("*");
+  const byId = Object.fromEntries(students.map(s=>[s.id,s]));
+  const rows = [["name","school","class","code","item_id","module","question","answer","correct","answered_at"]];
+  answers.forEach(a=>{
+    const s = byId[a.sessions && a.sessions.student_id];
+    rows.push([s?s.name:"", s?s.school:"", s?s.class:"", s?s.code:"", a.item_id, a.module, a.question, a.answer, a.correct, a.answered_at]);
+  });
+  const csv = rows.map(r=>r.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\n");
+  const blob = new Blob([csv], {type:"text/csv"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "sawaal-better-export.csv";
+  a.click();
+}
+</script>
+</body>
+</html>
